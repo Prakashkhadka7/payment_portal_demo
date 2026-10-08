@@ -1,0 +1,16 @@
+@use '@angular/material' as mat;
+
+/// Material 3 theme. Emits `--mat-sys-*` CSS variables that custom components should use
+/// instead of hard-coded colours, so the whole UI stays consistent with the theme.
+@mixin apply-theme {
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$azure-palette,
+        tertiary: mat.$blue-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+    )
+  );
+}
