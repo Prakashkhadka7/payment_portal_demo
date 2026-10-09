@@ -1,0 +1,91 @@
+<div class="table-scroll">
+  <table
+    mat-table
+    class="table"
+    [class.table--busy]="busy()"
+    [dataSource]="items()"
+    [trackBy]="trackById"
+    matSort
+    matSortDisableClear
+    [matSortActive]="sortBy()"
+    [matSortDirection]="sortDirection()"
+    (matSortChange)="sortChange.emit($event)"
+  >
+    <caption class="app-visually-hidden">
+      Merchant applications. Column headers with a sort button change the order.
+    </caption>
+
+    <ng-container matColumnDef="reference">
+      <th mat-header-cell *matHeaderCellDef>Reference</th>
+      <td mat-cell *matCellDef="let row" class="app-mono table__reference">{{ row.reference }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="merchant">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header="legalName">Merchant</th>
+      <td mat-cell *matCellDef="let row">
+        <a class="table__row-link" [routerLink]="['/applications', row.id]">
+          {{ row.legalName || 'Untitled draft' }}
+        </a>
+        @if (showsTradingName(row)) {
+          <span class="table__secondary">Trading as {{ row.tradingName }}</span>
+        }
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="status">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header="status">Status</th>
+      <td mat-cell *matCellDef="let row"><app-status-badge [status]="row.status" /></td>
+    </ng-container>
+
+    <ng-container matColumnDef="createdBy">
+      <th mat-header-cell *matHeaderCellDef>Submitted by</th>
+      <td mat-cell *matCellDef="let row">{{ row.createdBy.displayName }}</td>
+    </ng-container>
+
+    <ng-container matColumnDef="reviewer">
+      <th mat-header-cell *matHeaderCellDef>Reviewer</th>
+      <td mat-cell *matCellDef="let row">
+        @if (row.assignedReviewer; as reviewer) {
+          {{ reviewer.displayName }}
+        } @else if (row.status === 'SUBMITTED') {
+          <span class="table__unassigned">Unassigned</span>
+        } @else {
+          <span class="table__muted" aria-label="Not applicable">—</span>
+        }
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="risk">
+      <th mat-header-cell *matHeaderCellDef>Risk</th>
+      <td mat-cell *matCellDef="let row"><app-risk-badge [level]="row.latestRiskLevel" /></td>
+    </ng-container>
+
+    <ng-container matColumnDef="updatedAt">
+      <th mat-header-cell *matHeaderCellDef mat-sort-header="updatedAt">Updated</th>
+      <td mat-cell *matCellDef="let row" class="table__date">
+        <time [attr.datetime]="row.updatedAt">{{ row.updatedAt | date: 'd MMM y' }}</time>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="actions">
+      <th mat-header-cell *matHeaderCellDef><span class="app-visually-hidden">Actions</span></th>
+      <td mat-cell *matCellDef="let row" class="table__actions">
+        @if (row.allowedActions.includes('edit')) {
+          <a
+            mat-icon-button
+            class="table__action"
+            [routerLink]="['/applications', row.id, 'edit']"
+            [attr.aria-label]="'Edit draft ' + row.reference"
+            matTooltip="Edit draft"
+          >
+            <mat-icon>edit</mat-icon>
+          </a>
+        }
+        <mat-icon class="table__chevron" aria-hidden="true">chevron_right</mat-icon>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="columns()"></tr>
+    <tr mat-row *matRowDef="let row; columns: columns()" class="table__row"></tr>
+  </table>
+</div>
