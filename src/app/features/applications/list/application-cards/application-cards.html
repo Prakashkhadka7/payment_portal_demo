@@ -1,0 +1,45 @@
+<ul class="cards" [class.cards--busy]="busy()">
+  @for (item of items(); track item.id) {
+    <li class="card">
+      <div class="card__top">
+        <span class="app-mono card__reference">{{ item.reference }}</span>
+        <app-status-badge [status]="item.status" />
+      </div>
+      <a class="card__link" [routerLink]="['/applications', item.id]">
+        {{ item.legalName || 'Untitled draft' }}
+      </a>
+      <dl class="card__meta">
+        @if (shows('createdBy')) {
+          <div>
+            <dt>Submitted by</dt>
+            <dd>{{ item.createdBy.displayName }}</dd>
+          </div>
+        }
+        @if (shows('reviewer')) {
+          <div>
+            <dt>Reviewer</dt>
+            <dd>{{ item.assignedReviewer?.displayName ?? 'Unassigned' }}</dd>
+          </div>
+        }
+        @if (shows('risk')) {
+          <div>
+            <dt>Risk</dt>
+            <dd><app-risk-badge [level]="item.latestRiskLevel" /></dd>
+          </div>
+        }
+        <div>
+          <dt>Updated</dt>
+          <dd>
+            <time [attr.datetime]="item.updatedAt">{{ item.updatedAt | date: 'd MMM y' }}</time>
+          </dd>
+        </div>
+      </dl>
+      @if (item.allowedActions.includes('edit')) {
+        <a class="card__edit" [routerLink]="['/applications', item.id, 'edit']">
+          <mat-icon aria-hidden="true">edit</mat-icon>
+          Edit draft<span class="app-visually-hidden"> {{ item.reference }}</span>
+        </a>
+      }
+    </li>
+  }
+</ul>

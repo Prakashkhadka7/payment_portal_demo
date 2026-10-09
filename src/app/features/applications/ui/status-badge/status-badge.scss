@@ -1,0 +1,49 @@
+:host {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+  background: var(--badge-bg);
+  color: var(--badge-fg);
+}
+
+.badge__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--badge-dot);
+}
+
+:host(.badge--draft) {
+  --badge-bg: #ece8df;
+  --badge-fg: #57534e;
+  --badge-dot: #a8a29e;
+}
+
+:host(.badge--submitted) {
+  --badge-bg: #e3ebf5;
+  --badge-fg: #1e3a5f;
+  --badge-dot: #3b6ea5;
+}
+
+:host(.badge--in_review) {
+  --badge-bg: #f7ecd6;
+  --badge-fg: #6b4a12;
+  --badge-dot: var(--app-brass);
+}
+
+:host(.badge--approved) {
+  --badge-bg: #dcefe8;
+  --badge-fg: #0f4c40;
+  --badge-dot: #1f7a63;
+}
+
+:host(.badge--rejected) {
+  --badge-bg: #f8e1df;
+  --badge-fg: #7a1f17;
+  --badge-dot: #b3261e;
+}

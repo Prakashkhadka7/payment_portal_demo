@@ -1,0 +1,25 @@
+@use 'breakpoints' as bp;
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+
+  &__search {
+    flex: 1 1 280px;
+    max-width: 420px;
+
+    @include bp.down(sm) {
+      max-width: none;
+    }
+  }
+
+  &__status {
+    flex: 0 1 200px;
+
+    @include bp.down(sm) {
+      flex: 1 1 100%;
+    }
+  }
+}

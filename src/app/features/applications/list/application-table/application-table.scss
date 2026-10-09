@@ -1,0 +1,105 @@
+:host {
+  display: block;
+  --mat-table-background-color: transparent;
+  --mat-table-header-headline-color: var(--mat-sys-on-surface-variant);
+  --mat-table-row-item-outline-color: var(--app-line);
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  min-width: 720px;
+  transition: opacity 160ms ease;
+
+  &--busy {
+    opacity: 0.55;
+  }
+
+  th {
+    font: 500 0.6875rem/1 var(--app-font-sans);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  &__row {
+    position: relative;
+    transition: background-color 120ms ease;
+
+    &:hover {
+      background: var(--mat-sys-surface-container-low);
+    }
+
+    &:focus-within {
+      background: var(--mat-sys-surface-container-low);
+    }
+  }
+
+  &__reference {
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 0.8125rem;
+    white-space: nowrap;
+  }
+
+  // The merchant link covers the whole row, so the row is clickable while remaining one
+  // focusable, announced link for keyboard and screen-reader users.
+  &__row-link {
+    color: var(--app-ink);
+    font-weight: 500;
+    text-decoration: none;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+    }
+
+    &:focus-visible {
+      outline: none;
+
+      &::after {
+        outline: 2px solid var(--mat-sys-primary);
+        outline-offset: -2px;
+      }
+    }
+  }
+
+  &__secondary {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &__unassigned {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px dashed var(--app-brass);
+    color: #6b4a12;
+    font-size: 0.75rem;
+  }
+
+  &__muted {
+    color: var(--mat-sys-outline);
+  }
+
+  &__actions {
+    width: 96px;
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  // Sits above the stretched row link so it stays independently clickable.
+  &__action {
+    position: relative;
+    z-index: 1;
+  }
+
+  &__chevron {
+    vertical-align: middle;
+    color: var(--mat-sys-outline);
+  }
+}

@@ -1,0 +1,49 @@
+.risk {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+  color: var(--mat-sys-on-surface-variant);
+
+  &__bars {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 12px;
+
+    i {
+      width: 3px;
+      border-radius: 1px;
+      background: var(--app-line);
+
+      &:nth-child(1) {
+        height: 5px;
+      }
+
+      &:nth-child(2) {
+        height: 8px;
+      }
+
+      &:nth-child(3) {
+        height: 12px;
+      }
+    }
+  }
+
+  // Bars light up by level; the label always carries the meaning.
+  &--low i:nth-child(-n + 1) {
+    background: #1f7a63;
+  }
+
+  &--medium i:nth-child(-n + 2) {
+    background: var(--app-brass);
+  }
+
+  &--high i {
+    background: #b3261e;
+  }
+
+  &--none {
+    color: var(--mat-sys-outline);
+  }
+}
