@@ -1,0 +1,92 @@
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<mat-sidenav-container class="shell">
+  <mat-sidenav
+    #drawer
+    class="sidebar"
+    [mode]="isHandset() ? 'over' : 'side'"
+    [opened]="!isHandset()"
+    [attr.role]="isHandset() ? 'dialog' : null"
+    aria-label="Main navigation"
+  >
+    <div class="sidebar__inner">
+      <a class="brand" routerLink="/" (click)="closeOnHandset(drawer)">
+        <span class="brand__mark" aria-hidden="true">M</span>
+        <span class="brand__text">
+          <span class="brand__name">Merchant Portal</span>
+          <span class="brand__tagline">Payments operations</span>
+        </span>
+      </a>
+
+      <nav class="sidebar__nav" aria-label="Main">
+        <p class="app-eyebrow sidebar__section">Workspace</p>
+        <ul class="nav-list">
+          @for (item of navItems(); track item.path) {
+            <li>
+              <a
+                class="nav-link"
+                [routerLink]="item.path"
+                routerLinkActive="nav-link--active"
+                ariaCurrentWhenActive="page"
+                [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+                (click)="closeOnHandset(drawer)"
+              >
+                <mat-icon class="nav-link__icon" aria-hidden="true">{{ item.icon }}</mat-icon>
+                <span class="nav-link__label">{{ item.label }}</span>
+              </a>
+            </li>
+          }
+        </ul>
+      </nav>
+
+      <p class="demo-note">
+        <mat-icon aria-hidden="true">science</mat-icon>
+        Demo · fictional data
+      </p>
+
+      @if (user(); as currentUser) {
+        <div class="user-card">
+          <span class="user-card__avatar" aria-hidden="true">{{ initials() }}</span>
+          <span class="user-card__text">
+            <span class="user-card__name">{{ currentUser.displayName }}</span>
+            <span class="user-card__roles">{{ roleLabel() }}</span>
+          </span>
+          <button
+            mat-icon-button
+            type="button"
+            class="user-card__logout"
+            aria-label="Sign out"
+            matTooltip="Sign out"
+            (click)="logout()"
+          >
+            <mat-icon>logout</mat-icon>
+          </button>
+        </div>
+      }
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="content">
+    @if (isHandset()) {
+      <header class="topbar">
+        <button
+          mat-icon-button
+          type="button"
+          aria-label="Open navigation"
+          [attr.aria-expanded]="drawer.opened"
+          (click)="drawer.toggle()"
+        >
+          <mat-icon>menu</mat-icon>
+        </button>
+        <span class="brand__mark brand__mark--small" aria-hidden="true">M</span>
+        <span class="topbar__title">Merchant Portal</span>
+      </header>
+    }
+
+    <main id="main-content" class="content__main" tabindex="-1">
+      <div class="content__inner app-route-enter">
+        <router-outlet />
+      </div>
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

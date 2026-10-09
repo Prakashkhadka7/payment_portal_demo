@@ -1,0 +1,24 @@
+@if (data.icon; as icon) {
+  <span class="confirm__icon" [class.confirm__icon--danger]="isDanger" aria-hidden="true">
+    <mat-icon>{{ icon }}</mat-icon>
+  </span>
+}
+
+<h2 mat-dialog-title class="confirm__title">{{ data.title }}</h2>
+
+<mat-dialog-content class="confirm__message">{{ data.message }}</mat-dialog-content>
+
+<mat-dialog-actions class="confirm__actions">
+  <button mat-button type="button" class="confirm__cancel" [mat-dialog-close]="false">
+    {{ data.cancelLabel ?? 'Cancel' }}
+  </button>
+  <button
+    mat-flat-button
+    type="button"
+    class="confirm__confirm"
+    [class.confirm__confirm--danger]="isDanger"
+    [mat-dialog-close]="true"
+  >
+    {{ data.confirmLabel ?? 'Confirm' }}
+  </button>
+</mat-dialog-actions>

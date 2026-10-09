@@ -20,18 +20,17 @@ npm run dev                              # mock API (:3000) + app (http://localh
 
 ## Scripts
 
-| Script                  | Purpose                                |
-| ----------------------- | -------------------------------------- |
-| `npm run dev`           | Mock API and dev server together       |
-| `npm start`             | Dev server only (proxies `/api`)       |
-| `npm run mock:api`      | Mock API only, restarts on change      |
-| `npm run build`         | Production build                       |
-| `npm test`              | Unit tests (Vitest + TestBed), watch   |
-| `npm run test:ci`       | Unit tests, single run                 |
-| `npm run lint`          | ESLint (TypeScript + templates + a11y) |
-| `npm run typecheck:api` | Type-check the mock API                |
-| `npm run format`        | Prettier write                         |
-| `npm run format:check`  | Prettier check                         |
+| Script                 | Purpose                                |
+| ---------------------- | -------------------------------------- |
+| `npm run dev`          | Mock API and dev server together       |
+| `npm start`            | Dev server only (proxies `/api`)       |
+| `npm run mock:api`     | Mock API only, restarts on change      |
+| `npm run build`        | Production build                       |
+| `npm test`             | Unit tests (Vitest + TestBed), watch   |
+| `npm run test:ci`      | Unit tests, single run                 |
+| `npm run lint`         | ESLint (TypeScript + templates + a11y) |
+| `npm run format`       | Prettier write                         |
+| `npm run format:check` | Prettier check                         |
 
 ## Environment configuration
 
@@ -50,7 +49,9 @@ A small Express server in `mock-api/` that behaves like a real backend, so the f
 built against realistic security boundaries:
 
 - **Authentication**: short-lived opaque bearer access tokens (60 s by default) and a rotating,
-  single-use refresh token in an `httpOnly`, `SameSite=Strict` cookie scoped to `/api/auth`.
+  single-use refresh token in an `httpOnly`, `SameSite=Strict` cookie scoped to `/api/auth`. A
+  non-secret `pp_session` cookie with the same lifetime tells the app a session may exist, so it
+  only calls `/auth/refresh` on start-up when there is something to restore.
 - **Authorization is enforced server-side** on every request. Users can hold several roles; their
   permissions are the union. Records outside a user's scope return `404`, and each application
   carries `allowedActions` computed by `mock-api/src/applications/application.policy.ts`.
@@ -58,6 +59,8 @@ built against realistic security boundaries:
   available through an audited reveal endpoint and are write-only on save.
 - **No secrets in the repository**: demo users' password comes from `mock-api/.env` and is stored
   only as a salted scrypt hash. All seed data is fictional.
+- **Login rate limiting**: after `LOGIN_MAX_FAILURES` failed attempts a username is blocked for
+  `LOGIN_LOCKOUT_SECONDS` (defaults: 5 attempts, 300 s).
 - `MOCK_LATENCY_MS` and `MOCK_FAILURE_RATE` make loading and error/retry states easy to see.
 
 The Angular dev server proxies `/api` to the mock API (`proxy.conf.json`), so the browser only
@@ -76,7 +79,8 @@ mock-api/src/
 └─ shared/                  Errors, input readers, IBAN checksum, network simulation
 src/
 ├─ environments/            Typed runtime configuration sourced from .env
-├─ styles/                  SCSS partials: Material theme, breakpoint mixins
+├─ testing/                 Test fixtures shared by specs
+├─ styles/                  SCSS partials: design tokens, brand palette, theme, breakpoints
 └─ app/
    ├─ core/                 App-wide singletons
    │  ├─ auth/              Session, token handling, guards, permissions
@@ -88,6 +92,7 @@ src/
    │  └─ utils/             Pure helper functions
    └─ features/             Lazy-loaded feature areas
       ├─ auth/              Login
+      ├─ errors/            Forbidden and not-found pages
       └─ applications/
          ├─ data-access/    API service, models, state
          ├─ list/           Dashboard

@@ -1,15 +1,93 @@
+@use '@angular/material' as mat;
 @use 'theme';
+@use 'tokens';
 
 html {
   height: 100%;
   @include theme.apply-theme;
+  @include tokens.app-tokens;
+
+  @include mat.button-overrides(
+    (
+      filled-container-shape: 8px,
+      outlined-container-shape: 8px,
+      protected-container-shape: 8px,
+      text-container-shape: 8px,
+      tonal-container-shape: 8px,
+    )
+  );
+  @include mat.form-field-overrides(
+    (
+      outlined-container-shape: 8px,
+    )
+  );
+  @include mat.dialog-overrides(
+    (
+      container-shape: 14px,
+      container-color: #fffdf8,
+    )
+  );
 }
 
 body {
   color-scheme: light;
-  background-color: var(--mat-sys-surface);
-  color: var(--mat-sys-on-surface);
-  font: var(--mat-sys-body-medium);
   margin: 0;
   height: 100%;
+  background-color: var(--app-paper);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+  font-family: var(--app-font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--app-font-display);
+  font-optical-sizing: auto;
+  letter-spacing: -0.01em;
+}
+
+::selection {
+  background: var(--app-brass-soft);
+}
+
+:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}
+
+.app-mono {
+  font-family: var(--app-font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+.app-eyebrow {
+  font: 500 0.6875rem/1.2 var(--app-font-sans);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+@keyframes app-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.app-route-enter > router-outlet + * {
+  display: block;
+  animation: app-enter var(--app-duration-enter) var(--app-ease-out) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

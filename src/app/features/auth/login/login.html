@@ -1,0 +1,88 @@
+<div class="login">
+  <aside class="login__brand" aria-hidden="true">
+    <div class="login__brand-top">
+      <span class="login__mark">M</span>
+      <span class="login__wordmark">Merchant Portal</span>
+    </div>
+
+    <div class="login__statement">
+      <p class="app-eyebrow login__kicker">Payments operations</p>
+      <p class="login__headline">Onboard merchants with <em>confidence</em>.</p>
+      <ul class="login__points">
+        <li><mat-icon>verified_user</mat-icon>Role-based review and approvals</li>
+        <li><mat-icon>visibility_off</mat-icon>Sensitive data masked by default</li>
+        <li><mat-icon>history</mat-icon>Every decision on the record</li>
+      </ul>
+    </div>
+
+    <p class="login__footnote">Demo environment · all data is fictional</p>
+  </aside>
+
+  <main class="login__panel">
+    <div class="login__form-wrap">
+      <span class="login__mark login__mark--mobile" aria-hidden="true">M</span>
+      <h1 class="login__title">Sign in</h1>
+      <p class="login__subtitle">Use your portal account to continue.</p>
+
+      <form class="login__form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        @if (errorMessage(); as message) {
+          <p class="login__error" role="alert">
+            <mat-icon aria-hidden="true">error_outline</mat-icon>
+            {{ message }}
+          </p>
+        }
+
+        <mat-form-field appearance="outline">
+          <mat-label>Username</mat-label>
+          <input matInput formControlName="username" autocomplete="username" required />
+          @if (form.controls.username.hasError('required')) {
+            <mat-error>Username is required</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Password</mat-label>
+          <input
+            #passwordInput
+            matInput
+            formControlName="password"
+            autocomplete="current-password"
+            required
+            [type]="passwordVisible() ? 'text' : 'password'"
+            (keydown)="detectCapsLock($event)"
+            (keyup)="detectCapsLock($event)"
+          />
+          <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            [attr.aria-label]="passwordVisible() ? 'Hide password' : 'Show password'"
+            [attr.aria-pressed]="passwordVisible()"
+            (click)="togglePasswordVisibility()"
+          >
+            <mat-icon>{{ passwordVisible() ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (form.controls.password.hasError('required')) {
+            <mat-error>Password is required</mat-error>
+          } @else if (form.controls.password.hasError(invalidCredentials)) {
+            <mat-error>Invalid username or password</mat-error>
+          }
+          @if (capsLockOn()) {
+            <mat-hint class="login__caps-hint">
+              <mat-icon aria-hidden="true">keyboard_capslock</mat-icon>
+              Caps Lock is on
+            </mat-hint>
+          }
+        </mat-form-field>
+
+        <button mat-flat-button type="submit" class="login__submit" [disabled]="submitting()">
+          @if (submitting()) {
+            <mat-progress-spinner diameter="20" mode="indeterminate" aria-label="Signing in" />
+          } @else {
+            Sign in
+          }
+        </button>
+      </form>
+    </div>
+  </main>
+</div>
