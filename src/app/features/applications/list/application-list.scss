@@ -1,0 +1,39 @@
+@use 'breakpoints' as bp;
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+
+  &__surface {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid var(--app-line);
+    border-radius: var(--app-radius-lg);
+    background: var(--app-paper-raised);
+    box-shadow: var(--app-shadow-card);
+
+    @include bp.down(sm) {
+      overflow: visible;
+      border: 0;
+      border-radius: 0;
+      background: transparent;
+      box-shadow: none;
+    }
+  }
+
+  &__progress {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 2;
+  }
+
+  &__paginator {
+    --mat-paginator-container-background-color: transparent;
+    border-top: 1px solid var(--app-line);
+
+    @include bp.down(sm) {
+      border-top: 0;
+    }
+  }
+}

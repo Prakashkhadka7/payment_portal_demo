@@ -1,0 +1,102 @@
+<app-page-header eyebrow="Workspace" heading="Applications" [description]="description()">
+  <a
+    *appHasPermission="'application:create'"
+    pageActions
+    mat-flat-button
+    routerLink="/applications/new"
+  >
+    <mat-icon>add</mat-icon>
+    New application
+  </a>
+</app-page-header>
+
+<section class="list" aria-label="Applications" [attr.aria-busy]="store.isLoading()">
+  <app-application-filters
+    class="list__filters"
+    [status]="store.query().status"
+    [search]="store.query().search"
+    [hasActiveFilters]="store.hasActiveFilters()"
+    (statusChange)="filterByStatus($event)"
+    (searchChange)="search($event)"
+    (clearFilters)="clearFilters()"
+  />
+
+  <p class="app-visually-hidden" aria-live="polite">{{ announcement() }}</p>
+
+  <div class="list__surface">
+    @if (store.isLoading() && !store.isFirstLoad()) {
+      <mat-progress-bar
+        class="list__progress"
+        mode="indeterminate"
+        aria-label="Loading applications"
+      />
+    }
+
+    @if (store.isFirstLoad()) {
+      <app-skeleton [rows]="skeletonRows()" [columns]="columns().length - 1" />
+    } @else if (store.error(); as error) {
+      <app-state-message icon="cloud_off" heading="Couldn't load applications" role="alert">
+        <p>{{ error.message }}</p>
+        <button stateActions mat-flat-button type="button" (click)="store.retry()">
+          <mat-icon>refresh</mat-icon>
+          Try again
+        </button>
+      </app-state-message>
+    } @else if (store.items().length === 0) {
+      @if (store.hasActiveFilters()) {
+        <app-state-message icon="filter_alt_off" heading="No matching applications">
+          <p>Nothing matches the current search or status filter.</p>
+          <button stateActions mat-stroked-button type="button" (click)="clearFilters()">
+            Clear filters
+          </button>
+        </app-state-message>
+      } @else if (store.total() > 0) {
+        <app-state-message icon="last_page" heading="This page is empty">
+          <p>There are fewer results than this page number.</p>
+          <button stateActions mat-stroked-button type="button" (click)="goToFirstPage()">
+            Go to first page
+          </button>
+        </app-state-message>
+      } @else {
+        <app-state-message icon="inventory_2" heading="No applications yet">
+          <p>{{ emptyMessage() }}</p>
+          <a
+            *appHasPermission="'application:create'"
+            stateActions
+            mat-flat-button
+            routerLink="/applications/new"
+          >
+            <mat-icon>add</mat-icon>
+            Start an application
+          </a>
+        </app-state-message>
+      }
+    } @else {
+      @if (isPhone()) {
+        <app-application-cards
+          [items]="store.items()"
+          [columns]="columns()"
+          [busy]="store.isLoading()"
+        />
+      } @else {
+        <app-application-table
+          [items]="store.items()"
+          [columns]="columns()"
+          [sortBy]="store.query().sortBy"
+          [sortDirection]="store.query().sortDirection"
+          [busy]="store.isLoading()"
+          (sortChange)="sort($event)"
+        />
+      }
+      <mat-paginator
+        class="list__paginator"
+        aria-label="Application pages"
+        [length]="store.total()"
+        [pageIndex]="store.query().page - 1"
+        [pageSize]="store.query().pageSize"
+        [pageSizeOptions]="pageSizeOptions"
+        (page)="changePage($event)"
+      />
+    }
+  </div>
+</section>
