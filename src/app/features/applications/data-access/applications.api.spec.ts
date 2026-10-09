@@ -60,6 +60,22 @@ describe('ApplicationsApi', () => {
     request.flush({});
   });
 
+  it('calls the review, assignment and reveal endpoints', () => {
+    api
+      .decide('app-1', { decision: 'APPROVED', riskLevel: 'LOW', comment: 'Looks fine.' })
+      .subscribe();
+    api.assign('app-1', { reviewerId: 'u-1' }).subscribe();
+    api.reveal('app-1', { field: 'iban' }).subscribe();
+    api.reviewers().subscribe();
+
+    httpTesting.expectOne({ method: 'POST', url: '/api/applications/app-1/decision' }).flush({});
+    httpTesting.expectOne({ method: 'POST', url: '/api/applications/app-1/assignment' }).flush({});
+    httpTesting
+      .expectOne({ method: 'POST', url: '/api/applications/app-1/sensitive/reveal' })
+      .flush({});
+    httpTesting.expectOne({ method: 'GET', url: '/api/users/reviewers' }).flush([]);
+  });
+
   it('submits a draft', () => {
     api.submit('app-0001').subscribe();
 
