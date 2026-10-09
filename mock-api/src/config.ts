@@ -9,6 +9,10 @@ export interface MockApiConfig {
   readonly latencyMs: number;
   readonly failureRate: number;
   readonly secureCookies: boolean;
+  /** Failed logins allowed per user (and client) before further attempts are blocked. */
+  readonly loginMaxFailures: number;
+  /** Window in which failures are counted; also how long a block lasts. */
+  readonly loginLockoutSeconds: number;
 }
 
 const ENV_FILE = fileURLToPath(new URL('../.env', import.meta.url));
@@ -32,13 +36,15 @@ export function loadConfig(): MockApiConfig {
   }
 
   return {
-    port: readNumber('MOCK_API_PORT', 3000, 1, 65_535),
-    accessTokenTtlSeconds: readNumber('ACCESS_TOKEN_TTL_SECONDS', 60, 10, 86_400),
-    refreshTokenTtlSeconds: readNumber('REFRESH_TOKEN_TTL_SECONDS', 28_800, 60, 604_800),
+    port: readInteger('MOCK_API_PORT', 3000, 1, 65_535),
+    accessTokenTtlSeconds: readInteger('ACCESS_TOKEN_TTL_SECONDS', 60, 10, 86_400),
+    refreshTokenTtlSeconds: readInteger('REFRESH_TOKEN_TTL_SECONDS', 28_800, 60, 604_800),
     seedUserPassword,
-    latencyMs: readNumber('MOCK_LATENCY_MS', 400, 0, 10_000),
+    latencyMs: readInteger('MOCK_LATENCY_MS', 400, 0, 10_000),
     failureRate: readNumber('MOCK_FAILURE_RATE', 0, 0, 1),
     secureCookies: process.env['COOKIE_SECURE'] === 'true',
+    loginMaxFailures: readInteger('LOGIN_MAX_FAILURES', 5, 1, 100),
+    loginLockoutSeconds: readInteger('LOGIN_LOCKOUT_SECONDS', 300, 10, 86_400),
   };
 }
 
@@ -50,6 +56,14 @@ function readNumber(name: string, fallback: number, min: number, max: number): n
   const value = Number(raw);
   if (!Number.isFinite(value) || value < min || value > max) {
     throw new Error(`${name} must be a number between ${min} and ${max}, got "${raw}".`);
+  }
+  return value;
+}
+
+function readInteger(name: string, fallback: number, min: number, max: number): number {
+  const value = readNumber(name, fallback, min, max);
+  if (!Number.isInteger(value)) {
+    throw new Error(`${name} must be a whole number, got "${process.env[name]}".`);
   }
   return value;
 }

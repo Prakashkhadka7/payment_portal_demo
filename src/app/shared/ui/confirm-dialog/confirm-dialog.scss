@@ -1,0 +1,43 @@
+:host {
+  display: block;
+  padding-top: 24px;
+}
+
+.confirm {
+  &__icon {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    margin: 0 24px 4px;
+    border-radius: 50%;
+    background: var(--app-brass-soft);
+    color: var(--app-brass);
+
+    &--danger {
+      background: var(--mat-sys-error-container);
+      color: var(--mat-sys-error);
+    }
+  }
+
+  &__title {
+    font-family: var(--app-font-display);
+    font-weight: 560;
+    color: var(--app-ink);
+  }
+
+  &__message {
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  &__actions {
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 8px 24px 20px;
+  }
+
+  &__confirm--danger {
+    --mat-button-filled-container-color: var(--mat-sys-error);
+    --mat-button-filled-label-text-color: var(--mat-sys-on-error);
+  }
+}

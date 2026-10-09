@@ -1,0 +1,29 @@
+// variables. Components use these instead of hard-coded values.
+@mixin app-tokens {
+  // Typography
+  --app-font-display: 'Fraunces Variable', Georgia, serif;
+  --app-font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --app-font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  // Brand surfaces
+  --app-ink: #12161d;
+  --app-ink-raised: #1b212b;
+  --app-ink-line: rgb(255 255 255 / 8%);
+  --app-ink-text: #e8e4dc;
+  --app-ink-text-muted: #9a958c;
+  --app-paper: #f6f3ec;
+  --app-paper-raised: #fffdf8;
+  --app-line: #e3ddd1;
+  --app-brass: #c08a2e;
+  --app-brass-soft: rgb(192 138 46 / 16%);
+
+  // Shape & depth
+  --app-radius-sm: 6px;
+  --app-radius-md: 10px;
+  --app-radius-lg: 16px;
+  --app-shadow-card: 0 1px 0 rgb(18 22 29 / 4%), 0 8px 24px -12px rgb(18 22 29 / 18%);
+
+  // Motion
+  --app-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --app-duration-enter: 420ms;
+}

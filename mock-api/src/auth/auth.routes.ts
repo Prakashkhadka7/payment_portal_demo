@@ -9,6 +9,11 @@ import { hashPassword, verifyPassword } from './password.ts';
 import type { TokenStore } from './token-store.ts';
 
 export const REFRESH_COOKIE = 'pp_refresh';
+/**
+ * Non-secret companion of the refresh cookie, readable by the app. It only tells the client a
+ * session may exist, so it can skip the refresh call on start-up when there is nothing to restore.
+ */
+export const SESSION_HINT_COOKIE = 'pp_session';
 
 /** The refresh cookie is only ever sent to the auth endpoints, never to data endpoints. */
 const REFRESH_COOKIE_PATH = '/api/auth';
@@ -34,13 +39,22 @@ export function createAuthRouter({ users, tokens, rateLimiter, config }: AuthRou
     secure: config.secureCookies,
     path: REFRESH_COOKIE_PATH,
   };
+  const hintCookieOptions: CookieOptions = {
+    sameSite: 'strict',
+    secure: config.secureCookies,
+    path: '/',
+  };
+
+  const clearSessionCookies = (res: Response): void => {
+    res.clearCookie(REFRESH_COOKIE, cookieOptions);
+    res.clearCookie(SESSION_HINT_COOKIE, hintCookieOptions);
+  };
 
   const startSession = (res: Response, user: UserRecord): void => {
     const { token, expiresIn } = tokens.issueAccessToken(user.id);
-    res.cookie(REFRESH_COOKIE, tokens.issueRefreshToken(user.id), {
-      ...cookieOptions,
-      maxAge: config.refreshTokenTtlSeconds * 1000,
-    });
+    const maxAge = config.refreshTokenTtlSeconds * 1000;
+    res.cookie(REFRESH_COOKIE, tokens.issueRefreshToken(user.id), { ...cookieOptions, maxAge });
+    res.cookie(SESSION_HINT_COOKIE, '1', { ...hintCookieOptions, maxAge });
     const session: AuthSession = { accessToken: token, expiresIn, user: toAuthUser(user) };
     res.json(session);
   };
@@ -76,7 +90,7 @@ export function createAuthRouter({ users, tokens, rateLimiter, config }: AuthRou
     const user = userId ? users.findById(userId) : undefined;
 
     if (!user) {
-      res.clearCookie(REFRESH_COOKIE, cookieOptions);
+      clearSessionCookies(res);
       throw unauthorized('Session expired. Please sign in again.');
     }
     startSession(res, user);
@@ -87,7 +101,7 @@ export function createAuthRouter({ users, tokens, rateLimiter, config }: AuthRou
     if (typeof presented === 'string') {
       tokens.revokeRefreshToken(presented);
     }
-    res.clearCookie(REFRESH_COOKIE, cookieOptions);
+    clearSessionCookies(res);
     res.status(204).end();
   });
 

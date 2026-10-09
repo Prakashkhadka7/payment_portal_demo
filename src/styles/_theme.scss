@@ -1,16 +1,37 @@
 @use '@angular/material' as mat;
+@use 'theme-colors';
 
-/// Material 3 theme. Emits `--mat-sys-*` CSS variables that custom components should use
-/// instead of hard-coded colours, so the whole UI stays consistent with the theme.
+/// Material 3 theme built from the brand palette (see `_theme-colors.scss`, generated from
+/// ledger green #0F5C4F, brass #B7791F and warm stone #78716C).
 @mixin apply-theme {
   @include mat.theme(
     (
       color: (
-        primary: mat.$azure-palette,
-        tertiary: mat.$blue-palette,
+        primary: theme-colors.$primary-palette,
+        tertiary: theme-colors.$tertiary-palette,
+        theme-type: light,
       ),
-      typography: Roboto,
+      typography: (
+        plain-family: 'IBM Plex Sans',
+        brand-family: 'Fraunces Variable',
+      ),
       density: 0,
     )
   );
+
+  // Warm "paper" surfaces instead of the default cool greys.
+  @include mat.theme-overrides(
+    (
+      surface: #f6f3ec,
+      surface-container-lowest: #fffdf8,
+      surface-container-low: #faf7f1,
+      surface-container: #f1ede4,
+      surface-container-high: #ebe6dc,
+      outline-variant: #e3ddd1,
+    )
+  );
+
+  @media (prefers-contrast: more) {
+    @include theme-colors.high-contrast-overrides(light);
+  }
 }

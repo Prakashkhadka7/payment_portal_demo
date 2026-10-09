@@ -1,0 +1,34 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.state {
+  &__icon {
+    width: 48px;
+    height: 48px;
+    font-size: 48px;
+    color: var(--mat-sys-outline);
+  }
+
+  &__heading {
+    margin: 0;
+    font: var(--mat-sys-title-medium);
+    color: var(--mat-sys-on-surface);
+  }
+
+  &__body {
+    max-width: 480px;
+  }
+
+  &__actions:not(:empty) {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+}

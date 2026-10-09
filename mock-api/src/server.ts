@@ -7,9 +7,6 @@ import { createSeedApplications } from './seed/seed-applications.ts';
 import { createSeedUsers } from './seed/seed-users.ts';
 import { UserRepository } from './users/user.repository.ts';
 
-const LOGIN_MAX_FAILURES = 5;
-const LOGIN_WINDOW_MS = 5 * 60 * 1000;
-
 let config: MockApiConfig;
 try {
   config = loadConfig();
@@ -25,7 +22,10 @@ const app = createApp({
   users,
   applications: new ApplicationRepository(createSeedApplications()),
   tokens: new TokenStore(config),
-  rateLimiter: new LoginRateLimiter({ maxFailures: LOGIN_MAX_FAILURES, windowMs: LOGIN_WINDOW_MS }),
+  rateLimiter: new LoginRateLimiter({
+    maxFailures: config.loginMaxFailures,
+    windowMs: config.loginLockoutSeconds * 1000,
+  }),
 });
 
 app.listen(config.port, () => {
