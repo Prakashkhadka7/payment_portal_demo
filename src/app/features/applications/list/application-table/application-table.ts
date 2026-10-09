@@ -38,4 +38,9 @@ export class ApplicationTable {
   readonly sortChange = output<Sort>();
 
   protected readonly trackById = (_: number, row: ApplicationSummary): string => row.id;
+
+  /** Only when it adds information, e.g. not "Acme" under "Acme Pvt. Ltd.". */
+  protected showsTradingName({ legalName, tradingName }: ApplicationSummary): boolean {
+    return !!tradingName && !legalName.toLowerCase().startsWith(tradingName.toLowerCase());
+  }
 }

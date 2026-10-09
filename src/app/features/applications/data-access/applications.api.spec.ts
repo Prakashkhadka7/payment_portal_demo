@@ -33,4 +33,36 @@ describe('ApplicationsApi', () => {
     expect(request.request.params.get('page')).toBe('2');
     request.flush({ items: [], total: 0, page: 2, pageSize: 10 });
   });
+
+  it('loads one application, encoding the id taken from the URL', () => {
+    api.get('app 1/../x').subscribe();
+
+    httpTesting.expectOne({ method: 'GET', url: '/api/applications/app%201%2F..%2Fx' }).flush({});
+  });
+
+  it('creates a draft with the data wrapped as the API expects', () => {
+    const data = { business: { legalName: 'Spec Traders' } } as never;
+
+    api.create(data).subscribe();
+
+    const request = httpTesting.expectOne({ method: 'POST', url: '/api/applications' });
+    expect(request.request.body).toEqual({ data });
+    request.flush({});
+  });
+
+  it('saves a draft with its version for optimistic concurrency', () => {
+    const body = { version: 3, data: {} as never };
+
+    api.saveDraft('app-0001', body).subscribe();
+
+    const request = httpTesting.expectOne({ method: 'PUT', url: '/api/applications/app-0001' });
+    expect(request.request.body).toEqual(body);
+    request.flush({});
+  });
+
+  it('submits a draft', () => {
+    api.submit('app-0001').subscribe();
+
+    httpTesting.expectOne({ method: 'POST', url: '/api/applications/app-0001/submit' }).flush({});
+  });
 });
