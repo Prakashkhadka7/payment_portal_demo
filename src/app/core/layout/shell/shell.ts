@@ -48,7 +48,7 @@ export class Shell {
       .pipe(map((state) => state.matches)),
     { initialValue: false },
   );
-  protected readonly navItems = computed(() =>
+  protected readonly NAV_ITEMS = computed(() =>
     NAV_ITEMS.filter((item) => !item.permission || this.permissions.has(item.permission)),
   );
   protected readonly initials = computed(() => initialsOf(this.user()?.displayName ?? ''));
