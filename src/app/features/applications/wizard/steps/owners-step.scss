@@ -1,0 +1,33 @@
+.owners {
+  display: grid;
+  gap: 16px;
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+
+  &__item {
+    padding: 16px 16px 4px;
+    border: 1px solid var(--app-line);
+    border-radius: var(--app-radius-md);
+    background: var(--mat-sys-surface-container-low);
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 560;
+  }
+
+  &__error {
+    margin: 0 0 16px;
+    color: var(--mat-sys-error);
+    font-size: 0.875rem;
+  }
+}

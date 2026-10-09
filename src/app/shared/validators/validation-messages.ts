@@ -21,6 +21,7 @@ const MESSAGES: Readonly<Record<string, MessageFactory>> = {
   maxTotal: (e) =>
     `Total cannot exceed ${(e as { max: number }).max}% (currently ${(e as { actual: number }).actual}%)`,
   notGreaterThan: () => 'Average ticket cannot exceed the monthly volume',
+  atLeastOne: () => 'Add at least one entry',
   server: (e) => String(e),
 };
 

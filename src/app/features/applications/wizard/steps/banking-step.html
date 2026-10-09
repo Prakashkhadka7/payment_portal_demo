@@ -1,0 +1,60 @@
+<div class="app-form-grid" [formGroup]="form()">
+  <mat-form-field appearance="outline">
+    <mat-label>Account holder name</mat-label>
+    <input matInput formControlName="accountHolderName" [maxlength]="limits.text" />
+    <mat-error>{{ form().controls.accountHolderName.errors | validationMessage }}</mat-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Bank name</mat-label>
+    <input matInput formControlName="bankName" [maxlength]="limits.text" />
+    <mat-error>{{ form().controls.bankName.errors | validationMessage }}</mat-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="app-form-grid__full">
+    <mat-label>IBAN</mat-label>
+    <input
+      matInput
+      class="app-mono"
+      formControlName="iban"
+      [maxlength]="limits.iban"
+      autocomplete="off"
+      spellcheck="false"
+      placeholder="GB82 WEST 1234 5698 7654 32"
+    />
+    @if (storedIban(); as stored) {
+      <mat-hint>On file: {{ stored.masked }}. Enter a new IBAN only to replace it.</mat-hint>
+    }
+    <mat-error>{{ form().controls.iban.errors | validationMessage }}</mat-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Settlement currency</mat-label>
+    <mat-select formControlName="currency">
+      @for (option of currencies; track option[0]) {
+        <mat-option [value]="option[0]">{{ option[1] }}</mat-option>
+      }
+    </mat-select>
+    <mat-error>{{ form().controls.currency.errors | validationMessage }}</mat-error>
+  </mat-form-field>
+
+  <span></span>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Expected monthly volume</mat-label>
+    <input matInput type="number" formControlName="monthlyVolume" min="1" />
+    <mat-error>{{ form().controls.monthlyVolume.errors | validationMessage }}</mat-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Average ticket size</mat-label>
+    <input matInput type="number" formControlName="averageTicketSize" min="1" />
+    <mat-error>{{ form().controls.averageTicketSize.errors | validationMessage }}</mat-error>
+  </mat-form-field>
+
+  @if (form().hasError('notGreaterThan') && form().controls.averageTicketSize.touched) {
+    <p class="banking__error app-form-grid__full" role="alert">
+      {{ form().errors | validationMessage }}
+    </p>
+  }
+</div>

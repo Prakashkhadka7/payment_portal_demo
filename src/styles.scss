@@ -76,6 +76,22 @@ h3 {
   border: 0;
 }
 
+.app-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px 16px;
+  // Room for the first row's floating labels below the stepper header.
+  padding-top: 8px;
+
+  @media (min-width: 600px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  &__full {
+    grid-column: 1 / -1;
+  }
+}
+
 .app-eyebrow {
   font: 500 0.6875rem/1.2 var(--app-font-sans);
   letter-spacing: 0.12em;

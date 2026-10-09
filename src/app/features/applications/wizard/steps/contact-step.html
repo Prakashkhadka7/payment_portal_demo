@@ -1,0 +1,85 @@
+<div class="app-form-grid" [formGroup]="form()">
+  <mat-form-field appearance="outline">
+    <mat-label>Contact name</mat-label>
+    <input matInput formControlName="contactName" [maxlength]="limits.text" autocomplete="name" />
+    <mat-error>{{ form().controls.contactName.errors | validationMessage }}</mat-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Email</mat-label>
+    <input
+      matInput
+      type="email"
+      formControlName="email"
+      [maxlength]="limits.email"
+      autocomplete="email"
+    />
+    <mat-error>{{ form().controls.email.errors | validationMessage }}</mat-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Phone</mat-label>
+    <input
+      matInput
+      type="tel"
+      formControlName="phone"
+      [maxlength]="limits.phone"
+      autocomplete="tel"
+    />
+    <mat-error>{{ form().controls.phone.errors | validationMessage }}</mat-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Country</mat-label>
+    <mat-select formControlName="country">
+      @for (country of countries; track country.code) {
+        <mat-option [value]="country.code">{{ country.name }}</mat-option>
+      }
+    </mat-select>
+    <mat-error>{{ form().controls.country.errors | validationMessage }}</mat-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="app-form-grid__full">
+    <mat-label>Address line 1</mat-label>
+    <input
+      matInput
+      formControlName="addressLine1"
+      [maxlength]="limits.text"
+      autocomplete="address-line1"
+    />
+    <mat-error>{{ form().controls.addressLine1.errors | validationMessage }}</mat-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="app-form-grid__full">
+    <mat-label>Address line 2</mat-label>
+    <input
+      matInput
+      formControlName="addressLine2"
+      [maxlength]="limits.text"
+      autocomplete="address-line2"
+    />
+    <mat-hint>Optional</mat-hint>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>City</mat-label>
+    <input
+      matInput
+      formControlName="city"
+      [maxlength]="limits.city"
+      autocomplete="address-level2"
+    />
+    <mat-error>{{ form().controls.city.errors | validationMessage }}</mat-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Postal code</mat-label>
+    <input
+      matInput
+      formControlName="postalCode"
+      [maxlength]="limits.postalCode"
+      autocomplete="postal-code"
+    />
+    <mat-error>{{ form().controls.postalCode.errors | validationMessage }}</mat-error>
+  </mat-form-field>
+</div>

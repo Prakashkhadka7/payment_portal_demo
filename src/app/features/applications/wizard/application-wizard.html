@@ -1,0 +1,204 @@
+<app-page-header
+  eyebrow="Applications"
+  [heading]="heading()"
+  description="Complete each step. You can go back at any time; everything is checked again on submit."
+/>
+
+@switch (store.loadStatus()) {
+  @case ('loading') {
+    <app-skeleton [rows]="6" [columns]="2" />
+  }
+  @case ('error') {
+    <app-state-message icon="error_outline" heading="This application can't be opened" role="alert">
+      <p>{{ store.loadError()?.message }}</p>
+      <a stateActions mat-stroked-button routerLink="/applications">Back to applications</a>
+    </app-state-message>
+  }
+  @default {
+    @if (!store.isEditable()) {
+      <app-state-message icon="lock" heading="This application can no longer be edited">
+        <p>Only drafts can be changed. Submitted applications are locked for review.</p>
+        <a stateActions mat-flat-button [routerLink]="['/applications', store.detail()?.id]">
+          View application
+        </a>
+      </app-state-message>
+    } @else {
+      @if (formError(); as message) {
+        <p class="wizard__error" role="alert">
+          <mat-icon aria-hidden="true">error_outline</mat-icon>
+          {{ message }}
+        </p>
+      }
+
+      <mat-stepper
+        #stepper
+        class="wizard"
+        [linear]="true"
+        [orientation]="isPhone() ? 'vertical' : 'horizontal'"
+        (selectionChange)="onStepChange($event.selectedIndex)"
+      >
+        <mat-step
+          [stepControl]="form.controls.business"
+          label="Business"
+          errorMessage="Needs attention"
+        >
+          <app-business-step [form]="form.controls.business" />
+          <div class="wizard__actions">
+            <button mat-flat-button type="button" (click)="next(form.controls.business, stepper)">
+              Next
+            </button>
+          </div>
+        </mat-step>
+
+        <mat-step
+          [stepControl]="form.controls.contact"
+          label="Contact"
+          errorMessage="Needs attention"
+        >
+          <app-contact-step [form]="form.controls.contact" />
+          <div class="wizard__actions">
+            <button mat-button type="button" matStepperPrevious>Back</button>
+            <button mat-flat-button type="button" (click)="next(form.controls.contact, stepper)">
+              Next
+            </button>
+          </div>
+        </mat-step>
+
+        <mat-step
+          [stepControl]="form.controls.owners"
+          label="Owners"
+          errorMessage="Needs attention"
+        >
+          <app-owners-step [owners]="form.controls.owners" [storedTaxIds]="store.storedTaxIds()" />
+          <div class="wizard__actions">
+            <button mat-button type="button" matStepperPrevious>Back</button>
+            <button mat-flat-button type="button" (click)="next(form.controls.owners, stepper)">
+              Next
+            </button>
+          </div>
+        </mat-step>
+
+        <mat-step
+          [stepControl]="form.controls.banking"
+          label="Banking"
+          errorMessage="Needs attention"
+        >
+          <app-banking-step [form]="form.controls.banking" [storedIban]="store.storedIban()" />
+          <div class="wizard__actions">
+            <button mat-button type="button" matStepperPrevious>Back</button>
+            <button mat-flat-button type="button" (click)="next(form.controls.banking, stepper)">
+              Next
+            </button>
+          </div>
+        </mat-step>
+
+        <mat-step label="Review & submit">
+          @if (review(); as data) {
+            <div class="review">
+              <section class="review__section">
+                <h3>Business</h3>
+                <dl>
+                  <dt>Legal name</dt>
+                  <dd>{{ data.business.legalName }}</dd>
+                  <dt>Trading name</dt>
+                  <dd>{{ data.business.tradingName || '—' }}</dd>
+                  <dt>Type</dt>
+                  <dd>
+                    {{
+                      data.business.businessType
+                        ? labels.businessType[data.business.businessType]
+                        : '—'
+                    }}
+                  </dd>
+                  <dt>Registration</dt>
+                  <dd>{{ data.business.registrationNumber }}</dd>
+                  <dt>Industry</dt>
+                  <dd>
+                    {{ data.business.industry ? labels.industry[data.business.industry] : '—' }}
+                  </dd>
+                  <dt>Established</dt>
+                  <dd>{{ data.business.establishedOn }}</dd>
+                  <dt>Website</dt>
+                  <dd>{{ data.business.website || '—' }}</dd>
+                </dl>
+              </section>
+
+              <section class="review__section">
+                <h3>Contact</h3>
+                <dl>
+                  <dt>Name</dt>
+                  <dd>{{ data.contact.contactName }}</dd>
+                  <dt>Email</dt>
+                  <dd>{{ data.contact.email }}</dd>
+                  <dt>Phone</dt>
+                  <dd>{{ data.contact.phone }}</dd>
+                  <dt>Address</dt>
+                  <dd>
+                    {{ data.contact.addressLine1
+                    }}{{ data.contact.addressLine2 ? ', ' + data.contact.addressLine2 : '' }},
+                    {{ data.contact.city }} {{ data.contact.postalCode }},
+                    {{ labels.country[data.contact.country] }}
+                  </dd>
+                </dl>
+              </section>
+
+              <section class="review__section">
+                <h3>Owners</h3>
+                <dl>
+                  @for (owner of data.owners; track $index) {
+                    <dt>{{ owner.fullName }}</dt>
+                    <dd>
+                      {{ owner.ownershipPercentage }}%{{ owner.title ? ' · ' + owner.title : '' }} ·
+                      Tax ID
+                      <span class="app-mono">{{ masked(owner.taxId) ?? 'on file' }}</span>
+                    </dd>
+                  }
+                </dl>
+              </section>
+
+              <section class="review__section">
+                <h3>Banking</h3>
+                <dl>
+                  <dt>Account holder</dt>
+                  <dd>{{ data.banking.accountHolderName }}</dd>
+                  <dt>Bank</dt>
+                  <dd>{{ data.banking.bankName }}</dd>
+                  <dt>IBAN</dt>
+                  <dd class="app-mono">
+                    {{ masked(data.banking.iban) ?? store.storedIban()?.masked ?? '—' }}
+                  </dd>
+                  <dt>Currency</dt>
+                  <dd>
+                    {{ data.banking.currency ? labels.currency[data.banking.currency] : '—' }}
+                  </dd>
+                  <dt>Monthly volume</dt>
+                  <dd>{{ data.banking.monthlyVolume | number }}</dd>
+                  <dt>Average ticket</dt>
+                  <dd>{{ data.banking.averageTicketSize | number }}</dd>
+                </dl>
+              </section>
+            </div>
+          }
+
+          <mat-checkbox class="wizard__confirm" [formControl]="confirmed" required>
+            I confirm these details are accurate and complete.<span aria-hidden="true" class="text-danger">&nbsp;*</span>
+          </mat-checkbox>
+          @if (confirmed.touched && confirmed.invalid) {
+            <p class="wizard__confirm-error" role="alert">Please confirm before submitting.</p>
+          }
+
+          <div class="wizard__actions">
+            <button mat-button type="button" matStepperPrevious>Back</button>
+            <button mat-flat-button type="button" [disabled]="submitting()" (click)="submit()">
+              @if (submitting()) {
+                <mat-progress-spinner diameter="20" mode="indeterminate" aria-label="Submitting" />
+              } @else {
+                Submit for review
+              }
+            </button>
+          </div>
+        </mat-step>
+      </mat-stepper>
+    }
+  }
+}
