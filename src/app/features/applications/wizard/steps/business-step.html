@@ -1,0 +1,64 @@
+<div class="app-form-grid" [formGroup]="form()">
+  <mat-form-field appearance="outline">
+    <mat-label>Legal name</mat-label>
+    <input
+      matInput
+      formControlName="legalName"
+      [maxlength]="limits.text"
+      autocomplete="organization"
+    />
+    <mat-error>{{ form().controls.legalName.errors | validationMessage }}</mat-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Trading name</mat-label>
+    <input matInput formControlName="tradingName" [maxlength]="limits.text" />
+    <mat-hint>If different from the legal name</mat-hint>
+    <mat-error>{{ form().controls.tradingName.errors | validationMessage }}</mat-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Business type</mat-label>
+    <mat-select formControlName="businessType">
+      @for (option of businessTypes; track option[0]) {
+        <mat-option [value]="option[0]">{{ option[1] }}</mat-option>
+      }
+    </mat-select>
+    <mat-error>{{ form().controls.businessType.errors | validationMessage }}</mat-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Registration number</mat-label>
+    <input matInput formControlName="registrationNumber" [maxlength]="limits.registrationNumber" />
+    <mat-error>{{ form().controls.registrationNumber.errors | validationMessage }}</mat-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Industry</mat-label>
+    <mat-select formControlName="industry">
+      @for (option of industries; track option[0]) {
+        <mat-option [value]="option[0]">{{ option[1] }}</mat-option>
+      }
+    </mat-select>
+    <mat-error>{{ form().controls.industry.errors | validationMessage }}</mat-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Date established</mat-label>
+    <input matInput type="date" formControlName="establishedOn" [max]="today" />
+    <mat-error>{{ form().controls.establishedOn.errors | validationMessage }}</mat-error>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="app-form-grid__full">
+    <mat-label>Website</mat-label>
+    <input
+      matInput
+      type="url"
+      formControlName="website"
+      [maxlength]="limits.website"
+      placeholder="https://"
+    />
+    <mat-hint>Optional</mat-hint>
+    <mat-error>{{ form().controls.website.errors | validationMessage }}</mat-error>
+  </mat-form-field>
+</div>
