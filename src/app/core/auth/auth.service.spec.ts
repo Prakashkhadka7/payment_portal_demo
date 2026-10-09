@@ -78,15 +78,27 @@ describe('AuthService', () => {
     expect(router.navigate).not.toHaveBeenCalled();
   });
 
-  it('clears the session immediately on logout, even if the server call fails', () => {
+  it('leaves the page, then ends the session even if the server call fails', async () => {
     store.setSession(createSession());
     document.cookie = 'pp_session=1; path=/';
 
     service.logout();
+    await Promise.resolve();
 
+    expect(router.navigate).toHaveBeenCalledWith(['/login'], { state: { signingOut: true } });
     expect(store.isAuthenticated()).toBe(false);
     expect(document.cookie).not.toContain('pp_session');
-    expect(router.navigate).toHaveBeenCalledWith(['/login']);
     httpTesting.expectOne('/api/auth/logout').flush(null, { status: 500, statusText: 'Error' });
+  });
+
+  it('stays signed in when leaving the page is cancelled (e.g. unsaved changes)', async () => {
+    store.setSession(createSession());
+    vi.mocked(router.navigate).mockResolvedValue(false);
+
+    service.logout();
+    await Promise.resolve();
+
+    expect(store.isAuthenticated()).toBe(true);
+    httpTesting.expectNone('/api/auth/logout');
   });
 });

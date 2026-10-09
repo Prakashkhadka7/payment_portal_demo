@@ -13,6 +13,7 @@ import {
   throwError,
 } from 'rxjs';
 import { AuthApi } from './auth.api';
+import { SIGNING_OUT } from './auth.guards';
 import { AuthStore } from './auth.store';
 
 @Injectable({ providedIn: 'root' })
@@ -63,14 +64,22 @@ export class AuthService {
   }
 
   // Clears local state immediately
+  /**
+   * Leaves the current page first, so leave guards (e.g. unsaved form changes) can still cancel;
+   * only once that succeeds is the session ended. Revoking on the server is best effort.
+   */
   logout(): void {
-    this.store.clear();
-    this.api.clearSessionHint();
-    this.api
-      .logout()
-      .pipe(catchError(() => EMPTY))
-      .subscribe();
-    void this.router.navigate(['/login']);
+    void this.router.navigate(['/login'], { state: { [SIGNING_OUT]: true } }).then((navigated) => {
+      if (!navigated) {
+        return;
+      }
+      this.store.clear();
+      this.api.clearSessionHint();
+      this.api
+        .logout()
+        .pipe(catchError(() => EMPTY))
+        .subscribe();
+    });
   }
 
   private endSession(): void {

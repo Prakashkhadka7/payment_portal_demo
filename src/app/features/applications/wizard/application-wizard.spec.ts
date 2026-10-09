@@ -1,8 +1,10 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { MATERIAL_ANIMATIONS } from '@angular/material/core';
+import { Location } from '@angular/common';
 import { provideRouter, Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
+import { ConfirmDialogService } from '@shared/ui/confirm-dialog/confirm-dialog.service';
+import { firstValueFrom, isObservable, of, throwError } from 'rxjs';
 import { createDetail, VALID_FORM_VALUE } from '../../../../testing/application-fixtures';
 import { ApplicationsApi } from '../data-access/applications.api';
 import { ApplicationWizard } from './application-wizard';
@@ -10,6 +12,7 @@ import type { ApplicationForm } from './form/application-form';
 
 describe('ApplicationWizard', () => {
   const api = { get: vi.fn(), create: vi.fn(), saveDraft: vi.fn(), submit: vi.fn() };
+  const confirmDialog = { confirm: vi.fn() };
   let fixture: ComponentFixture<ApplicationWizard>;
   let element: HTMLElement;
   let router: Router;
@@ -20,6 +23,7 @@ describe('ApplicationWizard', () => {
       providers: [
         provideRouter([]),
         { provide: ApplicationsApi, useValue: api },
+        { provide: ConfirmDialogService, useValue: confirmDialog },
         { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
       ],
     });
@@ -46,7 +50,19 @@ describe('ApplicationWizard', () => {
 
   beforeEach(() => {
     Object.values(api).forEach((fn) => fn.mockReset());
+    confirmDialog.confirm.mockReset().mockReturnValue(of(false));
   });
+
+  /** Resolves the route guard hook the way the router would. */
+  const canLeave = async (): Promise<boolean> => {
+    const result = fixture.componentInstance.canLeave();
+    if (!isObservable(result)) {
+      return result;
+    }
+    const decision = firstValueFrom(result);
+    await fixture.whenStable();
+    return decision;
+  };
 
   it('starts a new application on the first step', async () => {
     await render();
@@ -135,6 +151,38 @@ describe('ApplicationWizard', () => {
     expect(form().controls.banking.controls.iban.getError('server')).toBe('Must be a valid IBAN');
     expect(element.querySelector('.wizard__error')?.textContent).toContain('need attention');
     expect(router.navigate).not.toHaveBeenCalled();
+  });
+
+  describe('leaving the page', () => {
+    it('allows leaving straight away when nothing is unsaved', async () => {
+      await render();
+
+      expect(await canLeave()).toBe(true);
+      expect(confirmDialog.confirm).not.toHaveBeenCalled();
+    });
+
+    it('asks before leaving with changes that are not saved yet', async () => {
+      await render();
+      form().controls.business.controls.legalName.setValue('Acme');
+
+      expect(await canLeave()).toBe(false);
+      expect(confirmDialog.confirm).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Leave without saving?', tone: 'danger' }),
+      );
+    });
+  });
+
+  it('switches the address to the edit URL after the first save of a new application', async () => {
+    api.create.mockReturnValue(of(createDetail({ id: 'app-new' })));
+    await render();
+    const location = TestBed.inject(Location);
+    vi.spyOn(location, 'path').mockReturnValue('/applications/new');
+    const replaceState = vi.spyOn(location, 'replaceState');
+
+    form().controls.business.controls.legalName.setValue('Acme');
+    fixture.componentInstance['autoSave'].retry();
+
+    expect(replaceState).toHaveBeenCalledWith('/applications/app-new/edit');
   });
 
   it('explains a conflicting change made elsewhere', async () => {
