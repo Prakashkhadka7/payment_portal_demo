@@ -1,5 +1,6 @@
 import type { NonNullableFormBuilder } from '@angular/forms';
 import type { ApplicationDataInput, ApplicationDataView } from '@contracts';
+import { fromIsoDate, toIsoDate } from '@shared/utils/iso-date';
 import { normalizeIban } from '@shared/validators/iban';
 import {
   type ApplicationForm,
@@ -20,7 +21,10 @@ export function toApplicationInput(form: ApplicationForm): ApplicationDataInput 
   const { iban, ...bankingDetails } = banking;
 
   return {
-    business,
+    business: {
+      ...business,
+      establishedOn: business.establishedOn ? toIsoDate(business.establishedOn) : null,
+    },
     contact,
     owners: owners.map(({ id, taxId, ...owner }) => ({
       ...owner,
@@ -46,7 +50,11 @@ export function populateForm(
   const { iban, ...banking } = data.banking;
   const { business, contact, owners } = form.controls;
 
-  business.patchValue(data.business, SILENT);
+  const { establishedOn } = data.business;
+  business.patchValue(
+    { ...data.business, establishedOn: establishedOn ? fromIsoDate(establishedOn) : null },
+    SILENT,
+  );
   contact.patchValue(data.contact, SILENT);
 
   owners.clear(SILENT);
@@ -86,7 +94,7 @@ export function syncServerState(form: ApplicationForm, data: ApplicationDataView
 
 /**
  * Shows server-side validation errors (422 `fieldErrors`) on the matching controls, e.g.
- * `owners[0].taxId` → owners › row 0 › taxId. 
+ * `owners[0].taxId` → owners › row 0 › taxId.
  */
 export function applyServerErrors(
   form: ApplicationForm,

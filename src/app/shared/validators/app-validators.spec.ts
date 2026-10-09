@@ -69,3 +69,14 @@ describe('app validators', () => {
     });
   });
 });
+
+describe('notInFutureValidator with Date values (from the datepicker)', () => {
+  it('accepts today and earlier, rejects later days', () => {
+    const validator = notInFutureValidator(() => new Date(2026, 9, 9, 15, 30));
+
+    expect(validator(new FormControl(new Date(2026, 9, 9)))).toBeNull();
+    expect(validator(new FormControl(new Date(2026, 9, 10)))).toEqual({
+      futureDate: { max: '2026-10-09' },
+    });
+  });
+});

@@ -10,6 +10,12 @@ describe('validationMessage', () => {
     expect(validationMessage({ iban: true, required: true })).toBe('This field is required');
   });
 
+  it('explains an unreadable typed date rather than calling it empty', () => {
+    expect(validationMessage({ required: true, matDatepickerParse: { text: 'abc' } })).toBe(
+      'Enter a valid date',
+    );
+  });
+
   it('includes details from the error', () => {
     expect(validationMessage({ maxTotal: { max: 100, actual: 120 } })).toBe(
       'Total cannot exceed 100% (currently 120%)',

@@ -34,7 +34,7 @@ export const VALID_FORM_VALUE = {
     registrationNumber: 'REG-000001',
     industry: 'RETAIL' as const,
     website: 'https://spec.example.com',
-    establishedOn: '2020-01-15',
+    establishedOn: new Date(2020, 0, 15),
   },
   contact: {
     contactName: 'Test Contact',
@@ -77,7 +77,7 @@ export function createDetail(overrides: Partial<ApplicationDetail> = {}): Applic
     updatedAt: '2026-10-01T09:00:00.000Z',
     submittedAt: null,
     data: {
-      business: VALID_FORM_VALUE.business,
+      business: { ...VALID_FORM_VALUE.business, establishedOn: '2020-01-15' },
       contact: VALID_FORM_VALUE.contact,
       owners: [
         {

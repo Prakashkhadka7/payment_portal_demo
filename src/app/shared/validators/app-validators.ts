@@ -1,4 +1,5 @@
 import type { AbstractControl, FormArray, ValidationErrors, ValidatorFn } from '@angular/forms';
+import { toIsoDate } from '../utils/iso-date';
 import { isValidIban } from './iban';
 
 /**
@@ -31,17 +32,14 @@ export const httpUrlValidator: ValidatorFn = ({ value }) => {
 export const phoneValidator: ValidatorFn = ({ value }) =>
   isEmpty(value) || PHONE_PATTERN.test(String(value)) ? null : { phone: true };
 
-/**
- * An ISO `YYYY-MM-DD` date that is not after today. `today` is injectable for tests.
- * Error key: `futureDate`.
- */
 export function notInFutureValidator(today: () => Date = () => new Date()): ValidatorFn {
   return ({ value }) => {
     if (isEmpty(value)) {
       return null;
     }
     const todayIso = toIsoDate(today());
-    return String(value) > todayIso ? { futureDate: { max: todayIso } } : null;
+    const iso = value instanceof Date ? toIsoDate(value) : String(value);
+    return iso > todayIso ? { futureDate: { max: todayIso } } : null;
   };
 }
 
@@ -74,10 +72,4 @@ export function notGreaterThanValidator(smallerKey: string, largerKey: string): 
       ? { notGreaterThan: { field: smallerKey, limitField: largerKey } }
       : null;
   };
-}
-
-function toIsoDate(date: Date): string {
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${date.getFullYear()}-${month}-${day}`;
 }
