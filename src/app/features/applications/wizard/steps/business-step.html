@@ -45,7 +45,14 @@
 
   <mat-form-field appearance="outline">
     <mat-label>Date established</mat-label>
-    <input matInput type="date" formControlName="establishedOn" [max]="today" />
+    <input
+      matInput
+      [matDatepicker]="establishedPicker"
+      formControlName="establishedOn"
+      [max]="today"
+    />
+    <mat-datepicker-toggle matIconSuffix [for]="establishedPicker" />
+    <mat-datepicker #establishedPicker startView="multi-year" />
     <mat-error>{{ form().controls.establishedOn.errors | validationMessage }}</mat-error>
   </mat-form-field>
 

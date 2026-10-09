@@ -7,6 +7,8 @@ type MessageFactory = (error: unknown) => string;
  * error wins, in this order, so the most fundamental problem is shown first.
  */
 const MESSAGES: Readonly<Record<string, MessageFactory>> = {
+  // Unparseable typed date: the value becomes null, so this must win over `required`.
+  matDatepickerParse: () => 'Enter a valid date',
   required: () => 'This field is required',
   email: () => 'Enter a valid email address',
   minlength: (e) => `Enter at least ${(e as { requiredLength: number }).requiredLength} characters`,
@@ -18,6 +20,7 @@ const MESSAGES: Readonly<Record<string, MessageFactory>> = {
   url: () => 'Enter a full web address starting with http:// or https://',
   phone: () => 'Enter a valid phone number, e.g. +977 1 4412345',
   futureDate: () => 'Date cannot be in the future',
+  matDatepickerMax: () => 'Date cannot be in the future',
   maxTotal: (e) =>
     `Total cannot exceed ${(e as { max: number }).max}% (currently ${(e as { actual: number }).actual}%)`,
   notGreaterThan: () => 'Average ticket cannot exceed the monthly volume',

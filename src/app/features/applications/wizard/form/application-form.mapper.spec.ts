@@ -69,6 +69,7 @@ describe('application form mapper', () => {
       expect(form.controls.business.controls.legalName.value).toBe('Spec Traders Pvt. Ltd.');
       expect(form.controls.owners.length).toBe(2);
       expect(form.controls.owners.at(0).controls.id.value).toBe('owner-1');
+      expect(form.controls.business.controls.establishedOn.value).toEqual(new Date(2020, 0, 15));
     });
 
     it('never puts masked values into inputs, and only requires what is not stored yet', () => {
@@ -98,6 +99,7 @@ describe('application form mapper', () => {
         ownershipPercentage: 60,
       });
       expect(JSON.stringify(input)).not.toContain('•');
+      expect(input.business.establishedOn).toBe('2020-01-15');
     });
 
     it('sends newly typed sensitive values, normalised', () => {

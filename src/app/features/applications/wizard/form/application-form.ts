@@ -37,7 +37,7 @@ export interface BusinessControls {
   registrationNumber: FormControl<string>;
   industry: FormControl<IndustryCategory | null>;
   website: FormControl<string>;
-  establishedOn: FormControl<string | null>;
+  establishedOn: FormControl<Date | null>;
 }
 
 export interface ContactControls {
@@ -99,7 +99,7 @@ export function createApplicationForm(
       registrationNumber: fb.control('', text(FIELD_LIMITS.registrationNumber)),
       industry: fb.control<IndustryCategory | null>(null, required),
       website: fb.control('', [httpUrlValidator, maxLength(FIELD_LIMITS.website)]),
-      establishedOn: fb.control<string | null>(null, [required, notInFutureValidator(today)]),
+      establishedOn: fb.control<Date | null>(null, [required, notInFutureValidator(today)]),
     }),
     contact: fb.group({
       contactName: fb.control('', text()),

@@ -22,7 +22,7 @@ describe('application form', () => {
     const { business, contact } = form.controls;
     contact.controls.email.setValue('not-an-email');
     business.controls.website.setValue('ftp://files.example.com');
-    business.controls.establishedOn.setValue('2030-01-01');
+    business.controls.establishedOn.setValue(new Date(2030, 0, 1));
 
     expect(business.controls.legalName.hasError('required')).toBe(true);
     expect(contact.controls.email.hasError('email')).toBe(true);
