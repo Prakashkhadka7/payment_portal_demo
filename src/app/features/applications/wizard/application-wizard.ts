@@ -1,5 +1,5 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe, DOCUMENT, Location } from '@angular/common';
 import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 import {
   Component,
@@ -26,12 +26,14 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatStepper, MatStepperModule } from '@angular/material/stepper';
 import { Router, RouterLink } from '@angular/router';
-import type { ApiError, ApplicationDataInput } from '@contracts';
+import type { ApiError, ApplicationDataInput, ApplicationDetail } from '@contracts';
 import { toApiError } from '@core/http/api-error';
 import { PageHeader } from '@shared/ui/page-header/page-header';
 import { Skeleton } from '@shared/ui/skeleton/skeleton';
+import type { CanLeave } from '@shared/guards/can-leave.guard';
+import { ConfirmDialogService } from '@shared/ui/confirm-dialog/confirm-dialog.service';
 import { StateMessage } from '@shared/ui/state-message/state-message';
-import { finalize, map, switchMap, tap } from 'rxjs';
+import { finalize, map, type Observable, switchMap } from 'rxjs';
 import {
   BUSINESS_TYPE_LABELS,
   COUNTRY_OPTIONS,
@@ -39,6 +41,7 @@ import {
   INDUSTRY_LABELS,
 } from '../data-access/application.constants';
 import { ApplicationWizardStore } from './application-wizard.store';
+import { DraftAutoSave } from './draft-auto-save';
 import { createApplicationForm } from './form/application-form';
 import {
   applyServerErrors,
@@ -58,6 +61,7 @@ import { OwnersStep } from './steps/owners-step';
 @Component({
   selector: 'app-application-wizard',
   imports: [
+    DatePipe,
     DecimalPipe,
     ReactiveFormsModule,
     RouterLink,
@@ -76,15 +80,21 @@ import { OwnersStep } from './steps/owners-step';
   ],
   providers: [
     ApplicationWizardStore,
+    DraftAutoSave,
     { provide: STEPPER_GLOBAL_OPTIONS, useValue: { showError: true } },
   ],
   templateUrl: './application-wizard.html',
   styleUrl: './application-wizard.scss',
+  host: { '(window:beforeunload)': 'warnBeforeUnload($event)' },
 })
-export class ApplicationWizard implements OnInit {
+export class ApplicationWizard implements OnInit, CanLeave {
   readonly id = input<string>();
 
   protected readonly store = inject(ApplicationWizardStore);
+  protected readonly autoSave = inject(DraftAutoSave);
+  private readonly confirmDialog = inject(ConfirmDialogService);
+  private readonly location = inject(Location);
+  private readonly document = inject(DOCUMENT);
   private readonly fb = inject(NonNullableFormBuilder);
   private readonly router = inject(Router);
   private readonly snackBar = inject(MatSnackBar);
@@ -129,12 +139,17 @@ export class ApplicationWizard implements OnInit {
 
   ngOnInit(): void {
     const id = this.id();
-    if (id) {
-      this.store
-        .load(id)
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe((detail) => populateForm(this.form, this.fb, detail.data));
+    if (!id) {
+      this.startAutoSave();
+      return;
     }
+    this.store
+      .load(id)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((detail) => {
+        populateForm(this.form, this.fb, detail.data);
+        this.startAutoSave();
+      });
   }
 
   /** Shows the step's errors (by touching its fields) before trying to move on. */
@@ -159,12 +174,11 @@ export class ApplicationWizard implements OnInit {
     this.submitting.set(true);
     this.formError.set(null);
 
-    // Save first (creating the draft if needed), then submit the saved version.
-    this.store
-      .save(toApplicationInput(this.form))
+    // Save the latest values if needed (creating the draft), then submit that version.
+    this.autoSave
+      .saveNow()
       .pipe(
-        tap((saved) => syncServerState(this.form, saved.data)),
-        switchMap((saved) => this.store.submit(saved.id)),
+        switchMap((draft) => this.store.submit(draft.id)),
         finalize(() => this.submitting.set(false)),
         takeUntilDestroyed(this.destroyRef),
       )
@@ -179,9 +193,54 @@ export class ApplicationWizard implements OnInit {
       });
   }
 
+  /** Route guard hook: asks before leaving with changes that are not saved yet. */
+  canLeave(): Observable<boolean> | boolean {
+    return (
+      !this.autoSave.hasUnsavedChanges() ||
+      this.confirmDialog.confirm({
+        title: 'Leave without saving?',
+        message: 'Your latest changes are not saved yet and will be lost.',
+        confirmLabel: 'Leave page',
+        cancelLabel: 'Stay',
+        icon: 'warning',
+        tone: 'danger',
+      })
+    );
+  }
+
+  /** Closing or reloading the tab with unsaved edits shows the browser's own warning. */
+  protected warnBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.autoSave.hasUnsavedChanges()) {
+      event.preventDefault();
+    }
+  }
+
+  protected retrySave(): void {
+    this.autoSave.retry();
+  }
+
+  protected reload(): void {
+    this.document.defaultView?.location.reload();
+  }
+
   /** Masks a newly typed sensitive value on the review screen, like stored ones. */
   protected masked(value: string | undefined): string | null {
     return value ? `•••• ${value.slice(-4)}` : null;
+  }
+
+  private startAutoSave(): void {
+    this.autoSave.connect(this.form, (saved) => this.adoptSaved(saved));
+  }
+
+  /**
+   * Adopts what the server assigned. After the first save of a new application the address
+   * becomes its edit URL (without re-creating the page), so a refresh reopens the draft.
+   */
+  private adoptSaved(saved: ApplicationDetail): void {
+    syncServerState(this.form, saved.data);
+    if (this.location.path().endsWith('/applications/new')) {
+      this.location.replaceState(`/applications/${saved.id}/edit`);
+    }
   }
 
   private showSubmitError(error: ApiError): void {

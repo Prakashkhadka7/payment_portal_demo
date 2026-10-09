@@ -65,6 +65,14 @@ describe('auth guards', () => {
     expect(currentUrl()).toBe('/applications/new');
   });
 
+  it('lets a signing-out user reach the login page', async () => {
+    store.setSession(createSession());
+
+    await TestBed.inject(Router).navigate(['/login'], { state: { signingOut: true } });
+
+    expect(currentUrl()).toBe('/login');
+  });
+
   it('keeps signed-in users away from the login page', async () => {
     store.setSession(createSession());
 

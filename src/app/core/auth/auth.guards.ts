@@ -13,9 +13,14 @@ export const authGuard: CanMatchFn = () => {
   return router.createUrlTree(['/login'], { queryParams: { returnUrl } });
 };
 
-// Keeps signed-in users away from the login page.
-export const guestGuard: CanMatchFn = () =>
-  !inject(AuthStore).isAuthenticated() || inject(Router).createUrlTree(['/']);
+export const SIGNING_OUT = 'signingOut';
+
+// Keeps signed-in users away from the login page, except while they are signing out.
+export const guestGuard: CanMatchFn = () => {
+  const router = inject(Router);
+  const signingOut = router.currentNavigation()?.extras.state?.[SIGNING_OUT] === true;
+  return signingOut || !inject(AuthStore).isAuthenticated() || router.createUrlTree(['/']);
+};
 
 // Requires the given permission ; otherwise shows the forbidden page.
 export function permissionGuard(requirement: PermissionRequirement): CanMatchFn {

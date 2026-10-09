@@ -2,7 +2,39 @@
   eyebrow="Applications"
   [heading]="heading()"
   description="Complete each step. You can go back at any time; everything is checked again on submit."
-/>
+>
+  @if (store.loadStatus() === 'ready' && store.isEditable()) {
+    <p
+      pageActions
+      class="save-status"
+      [class.save-status--error]="autoSave.status() === 'error'"
+      aria-live="polite"
+    >
+      @switch (autoSave.status()) {
+        @case ('saving') {
+          <mat-icon aria-hidden="true">sync</mat-icon> Saving…
+        }
+        @case ('saved') {
+          <mat-icon aria-hidden="true">cloud_done</mat-icon>
+          All changes saved · {{ autoSave.savedAt() | date: 'HH:mm' }}
+        }
+        @case ('error') {
+          <mat-icon aria-hidden="true">cloud_off</mat-icon>
+          @if (autoSave.error()?.code === 'CONFLICT') {
+            Changed elsewhere
+            <button mat-button type="button" (click)="reload()">Reload</button>
+          } @else {
+            Couldn't save
+            <button mat-button type="button" (click)="retrySave()">Retry</button>
+          }
+        }
+        @default {
+          <mat-icon aria-hidden="true">cloud_queue</mat-icon> Changes save automatically
+        }
+      }
+    </p>
+  }
+</app-page-header>
 
 @switch (store.loadStatus()) {
   @case ('loading') {
@@ -181,7 +213,11 @@
           }
 
           <mat-checkbox class="wizard__confirm" [formControl]="confirmed" required>
-            I confirm these details are accurate and complete.<span aria-hidden="true" class="text-danger">&nbsp;*</span>
+            I confirm these details are accurate and complete.<span
+              aria-hidden="true"
+              class="text-danger"
+              >&nbsp;*</span
+            >
           </mat-checkbox>
           @if (confirmed.touched && confirmed.invalid) {
             <p class="wizard__confirm-error" role="alert">Please confirm before submitting.</p>
@@ -189,7 +225,12 @@
 
           <div class="wizard__actions">
             <button mat-button type="button" matStepperPrevious>Back</button>
-            <button mat-flat-button type="button" [disabled]="submitting()" (click)="submit()">
+            <button
+              mat-flat-button
+              type="button"
+              [disabled]="submitting() || autoSave.status() === 'saving'"
+              (click)="submit()"
+            >
               @if (submitting()) {
                 <mat-progress-spinner diameter="20" mode="indeterminate" aria-label="Submitting" />
               } @else {

@@ -1,5 +1,6 @@
 import type { Routes } from '@angular/router';
 import { permissionGuard } from '@core/auth/auth.guards';
+import { canLeaveGuard } from '@shared/guards/can-leave.guard';
 
 export const APPLICATION_ROUTES: Routes = [
   {
@@ -11,12 +12,14 @@ export const APPLICATION_ROUTES: Routes = [
     path: 'new',
     title: 'New application',
     canMatch: [permissionGuard('application:create')],
+    canDeactivate: [canLeaveGuard],
     loadComponent: () => import('./wizard/application-wizard').then((m) => m.ApplicationWizard),
   },
   {
     path: ':id/edit',
     title: 'Edit application',
     canMatch: [permissionGuard('application:edit')],
+    canDeactivate: [canLeaveGuard],
     loadComponent: () => import('./wizard/application-wizard').then((m) => m.ApplicationWizard),
   },
   {
