@@ -1,0 +1,246 @@
+@if (detail(); as app) {
+  <app-page-header
+    eyebrow="Application"
+    [heading]="app.data.business.legalName || 'Untitled draft'"
+    [description]="app.reference + ' · created by ' + app.createdBy.displayName"
+  >
+    <app-status-badge pageActions [status]="app.status" />
+    @if (can('edit')) {
+      <a pageActions mat-flat-button [routerLink]="['/applications', app.id, 'edit']">
+        <mat-icon>edit</mat-icon>
+        Edit draft
+      </a>
+    }
+  </app-page-header>
+
+  <div class="detail">
+    <div class="detail__main">
+      <section class="card" aria-labelledby="business-heading">
+        <h2 id="business-heading" class="card__title">Business</h2>
+        <dl class="facts">
+          <dt>Legal name</dt>
+          <dd>{{ app.data.business.legalName || '—' }}</dd>
+          <dt>Trading name</dt>
+          <dd>{{ app.data.business.tradingName || '—' }}</dd>
+          <dt>Type</dt>
+          <dd>
+            {{
+              app.data.business.businessType
+                ? labels.businessType[app.data.business.businessType]
+                : '—'
+            }}
+          </dd>
+          <dt>Registration</dt>
+          <dd>{{ app.data.business.registrationNumber || '—' }}</dd>
+          <dt>Industry</dt>
+          <dd>
+            {{ app.data.business.industry ? labels.industry[app.data.business.industry] : '—' }}
+          </dd>
+          <dt>Established</dt>
+          <dd>{{ (app.data.business.establishedOn | date: 'd MMM y') ?? '—' }}</dd>
+          <dt>Website</dt>
+          <dd>{{ app.data.business.website || '—' }}</dd>
+        </dl>
+      </section>
+
+      <section class="card" aria-labelledby="contact-heading">
+        <h2 id="contact-heading" class="card__title">Contact</h2>
+        <dl class="facts">
+          <dt>Name</dt>
+          <dd>{{ app.data.contact.contactName || '—' }}</dd>
+          <dt>Email</dt>
+          <dd>{{ app.data.contact.email || '—' }}</dd>
+          <dt>Phone</dt>
+          <dd>{{ app.data.contact.phone || '—' }}</dd>
+          <dt>Address</dt>
+          <dd>
+            {{ app.data.contact.addressLine1 || '—'
+            }}{{ app.data.contact.addressLine2 ? ', ' + app.data.contact.addressLine2 : '' }}
+            @if (app.data.contact.city) {
+              <br />{{ app.data.contact.city }} {{ app.data.contact.postalCode }},
+              {{ labels.country[app.data.contact.country] ?? app.data.contact.country }}
+            }
+          </dd>
+        </dl>
+      </section>
+
+      <section class="card" aria-labelledby="owners-heading">
+        <h2 id="owners-heading" class="card__title">Owners</h2>
+        @for (owner of app.data.owners; track owner.id) {
+          <dl class="facts facts--owner">
+            <dt>Name</dt>
+            <dd>{{ owner.fullName || '—' }}{{ owner.title ? ' · ' + owner.title : '' }}</dd>
+            <dt>Ownership</dt>
+            <dd>{{ owner.ownershipPercentage ?? '—' }}%</dd>
+            <dt>Tax ID</dt>
+            <dd>
+              <app-sensitive-value
+                [applicationId]="app.id"
+                [target]="{ field: 'ownerTaxId', ownerId: owner.id }"
+                [masked]="owner.taxId"
+                [canReveal]="can('reveal-sensitive')"
+              />
+            </dd>
+          </dl>
+        } @empty {
+          <p class="card__empty">No owners added yet.</p>
+        }
+      </section>
+
+      <section class="card" aria-labelledby="banking-heading">
+        <h2 id="banking-heading" class="card__title">Banking</h2>
+        <dl class="facts">
+          <dt>Account holder</dt>
+          <dd>{{ app.data.banking.accountHolderName || '—' }}</dd>
+          <dt>Bank</dt>
+          <dd>{{ app.data.banking.bankName || '—' }}</dd>
+          <dt>IBAN</dt>
+          <dd>
+            <app-sensitive-value
+              [applicationId]="app.id"
+              [target]="{ field: 'iban' }"
+              [masked]="app.data.banking.iban"
+              [canReveal]="can('reveal-sensitive')"
+            />
+          </dd>
+          <dt>Currency</dt>
+          <dd>
+            {{ app.data.banking.currency ? labels.currency[app.data.banking.currency] : '—' }}
+          </dd>
+          <dt>Monthly volume</dt>
+          <dd>{{ (app.data.banking.monthlyVolume | number) ?? '—' }}</dd>
+          <dt>Average ticket</dt>
+          <dd>{{ (app.data.banking.averageTicketSize | number) ?? '—' }}</dd>
+        </dl>
+      </section>
+    </div>
+
+    <aside class="detail__side">
+      @if (actionError(); as message) {
+        <p class="action-error" role="alert">{{ message }}</p>
+      }
+
+      @if (can('review')) {
+        <section class="card card--action" aria-labelledby="review-heading">
+          <h2 id="review-heading" class="card__title">Record risk decision</h2>
+          <form class="action-form" [formGroup]="reviewForm" (ngSubmit)="recordDecision()">
+            <mat-radio-group
+              formControlName="decision"
+              aria-label="Decision"
+              class="action-form__choice"
+            >
+              <mat-radio-button value="APPROVED">Approve</mat-radio-button>
+              <mat-radio-button value="REJECTED">Reject</mat-radio-button>
+            </mat-radio-group>
+            @if (reviewForm.controls.decision.touched && reviewForm.controls.decision.invalid) {
+              <p class="action-form__error">Choose approve or reject.</p>
+            }
+            <mat-form-field appearance="outline">
+              <mat-label>Risk level</mat-label>
+              <mat-select formControlName="riskLevel">
+                @for (level of riskLevels; track level[0]) {
+                  <mat-option [value]="level[0]">{{ level[1] }}</mat-option>
+                }
+              </mat-select>
+              <mat-error>{{ reviewForm.controls.riskLevel.errors | validationMessage }}</mat-error>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Comment</mat-label>
+              <textarea matInput formControlName="comment" rows="3" maxlength="1000"></textarea>
+              <mat-hint>Explain the decision (at least 10 characters)</mat-hint>
+              <mat-error>{{ reviewForm.controls.comment.errors | validationMessage }}</mat-error>
+            </mat-form-field>
+            <button mat-flat-button type="submit" [disabled]="busy()">Record decision</button>
+          </form>
+        </section>
+      }
+
+      @if (can('assign')) {
+        <section class="card card--action" aria-labelledby="assign-heading">
+          <h2 id="assign-heading" class="card__title">
+            {{ app.assignedReviewer ? 'Reassign reviewer' : 'Assign reviewer' }}
+          </h2>
+          <div class="action-form">
+            <mat-form-field appearance="outline">
+              <mat-label>Reviewer</mat-label>
+              <mat-select [formControl]="reviewerId">
+                @for (reviewer of reviewers(); track reviewer.id) {
+                  <mat-option [value]="reviewer.id">{{ reviewer.displayName }}</mat-option>
+                }
+              </mat-select>
+              <mat-error>{{ reviewerId.errors | validationMessage }}</mat-error>
+            </mat-form-field>
+            <button mat-flat-button type="button" [disabled]="busy()" (click)="assignReviewer()">
+              Assign
+            </button>
+          </div>
+        </section>
+      }
+
+      <section class="card" aria-labelledby="status-heading">
+        <h2 id="status-heading" class="card__title">Status</h2>
+        <dl class="facts facts--stacked">
+          <dt>Status</dt>
+          <dd><app-status-badge [status]="app.status" /></dd>
+          <dt>Reviewer</dt>
+          <dd>{{ app.assignedReviewer?.displayName ?? 'Not assigned' }}</dd>
+          <dt>Submitted</dt>
+          <dd>{{ (app.submittedAt | date: 'd MMM y, HH:mm') ?? 'Not yet' }}</dd>
+          <dt>Last updated</dt>
+          <dd>{{ app.updatedAt | date: 'd MMM y, HH:mm' }}</dd>
+        </dl>
+      </section>
+
+      <section class="card" aria-labelledby="risk-heading">
+        <h2 id="risk-heading" class="card__title">Risk history</h2>
+        <ol class="timeline">
+          @for (decision of decisions(); track decision.id) {
+            <li class="timeline__item">
+              <div class="timeline__row">
+                <app-status-badge [status]="decision.decision" />
+                <app-risk-badge [level]="decision.riskLevel" />
+              </div>
+              <p class="timeline__comment">“{{ decision.comment }}”</p>
+              <p class="timeline__meta">
+                {{ decision.actor.displayName }} ·
+                <time [attr.datetime]="decision.at">{{
+                  decision.at | date: 'd MMM y, HH:mm'
+                }}</time>
+              </p>
+            </li>
+          } @empty {
+            <li class="card__empty">No risk decision recorded yet.</li>
+          }
+        </ol>
+      </section>
+
+      <section class="card" aria-labelledby="activity-heading">
+        <h2 id="activity-heading" class="card__title">Activity</h2>
+        <ol class="timeline">
+          @for (event of activity(); track event.id) {
+            <li class="timeline__item">
+              <p class="timeline__text">{{ describeEvent(event) }}</p>
+              <p class="timeline__meta">
+                {{ event.actor.displayName }} ·
+                <time [attr.datetime]="event.at">{{ event.at | date: 'd MMM y, HH:mm' }}</time>
+              </p>
+            </li>
+          }
+        </ol>
+      </section>
+    </aside>
+  </div>
+} @else if (loadError(); as error) {
+  <app-state-message icon="search_off" heading="Application not available" role="alert">
+    <p>
+      {{
+        error.code === 'NOT_FOUND'
+          ? "It doesn't exist or you don't have access to it."
+          : error.message
+      }}
+    </p>
+    <a stateActions mat-stroked-button routerLink="/applications">Back to applications</a>
+  </app-state-message>
+} @else {
+  <app-skeleton [rows]="8" [columns]="2" />
+}
