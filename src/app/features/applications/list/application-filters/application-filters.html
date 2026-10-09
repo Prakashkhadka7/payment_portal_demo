@@ -1,0 +1,44 @@
+<div class="filters" role="search" aria-label="Filter applications">
+  <mat-form-field appearance="outline" class="filters__search" subscriptSizing="dynamic">
+    <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+    <mat-label>Search</mat-label>
+    <input
+      matInput
+      type="search"
+      [formControl]="searchControl"
+      placeholder="Reference or merchant name"
+      autocomplete="off"
+    />
+    @if (searchControl.value) {
+      <button
+        mat-icon-button
+        matSuffix
+        type="button"
+        aria-label="Clear search"
+        (click)="clearSearch()"
+      >
+        <mat-icon>close</mat-icon>
+      </button>
+    }
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="filters__status" subscriptSizing="dynamic">
+    <mat-label>Status</mat-label>
+    <mat-select
+      [value]="status() ?? null"
+      (selectionChange)="statusChange.emit($event.value ?? undefined)"
+    >
+      <mat-option [value]="null">All statuses</mat-option>
+      @for (option of statuses; track option) {
+        <mat-option [value]="option">{{ statusLabels[option] }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
+  @if (hasActiveFilters()) {
+    <button mat-button type="button" class="filters__clear" (click)="clearFilters.emit()">
+      <mat-icon>filter_alt_off</mat-icon>
+      Clear filters
+    </button>
+  }
+</div>
