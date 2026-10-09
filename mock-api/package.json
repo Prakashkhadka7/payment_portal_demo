@@ -1,0 +1,6 @@
+{
+  "name": "payment-portal-mock-api",
+  "private": true,
+  "description": "Marks this folder as ES modules so Node can run the TypeScript sources directly.",
+  "type": "module"
+}

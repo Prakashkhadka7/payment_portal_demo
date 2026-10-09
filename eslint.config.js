@@ -39,7 +39,10 @@ module.exports = defineConfig([
       // TypeScript hygiene.
       '@typescript-eslint/consistent-type-imports': ['error', { fixStyle: 'inline-type-imports' }],
       '@typescript-eslint/no-non-null-assertion': 'error',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', ignoreRestSiblings: true },
+      ],
       // Avoid leaking tokens or sensitive data through the console.
       'no-console': ['error', { allow: ['warn', 'error'] }],
       eqeqeq: ['error', 'smart'],
@@ -49,6 +52,12 @@ module.exports = defineConfig([
     files: ['**/*.spec.ts'],
     rules: {
       '@typescript-eslint/no-non-null-assertion': 'off',
+    },
+  },
+  {
+    files: ['mock-api/**/*.ts'],
+    rules: {
+      'no-console': ['error', { allow: ['info', 'warn', 'error'] }],
     },
   },
   {
