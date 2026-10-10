@@ -1,8 +1,9 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { type ComponentFixture, TestBed } from '@angular/core/testing';
 import { MATERIAL_ANIMATIONS } from '@angular/material/core';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { provideRouter } from '@angular/router';
-import type { ApplicationAction } from '@contracts';
+import type { ApplicationAction, UserRef } from '@contracts';
 import { ConfirmDialogService } from '@shared/ui/confirm-dialog/confirm-dialog.service';
 import { of, throwError } from 'rxjs';
 import { createDetail } from '../../../../testing/application-fixtures';
@@ -18,16 +19,19 @@ describe('ApplicationDetail', () => {
     reveal: vi.fn(),
   };
   const confirmDialog = { confirm: vi.fn() };
+  const snackBar = { open: vi.fn() };
   let fixture: ComponentFixture<ApplicationDetail>;
   let element: HTMLElement;
 
   const render = async (
     allowedActions: ApplicationAction[],
     status = 'IN_REVIEW' as const,
+    assignedReviewer: UserRef | null = null,
   ): Promise<void> => {
     Object.values(api).forEach((fn) => fn.mockReset());
     confirmDialog.confirm.mockReset().mockReturnValue(of(true));
-    api.get.mockReturnValue(of(createDetail({ status, allowedActions })));
+    snackBar.open.mockReset();
+    api.get.mockReturnValue(of(createDetail({ status, allowedActions, assignedReviewer })));
     api.reviewers.mockReturnValue(
       of([
         { id: 'u-sales', displayName: 'Test Sales' },
@@ -40,6 +44,7 @@ describe('ApplicationDetail', () => {
         provideRouter([]),
         { provide: ApplicationsApi, useValue: api },
         { provide: ConfirmDialogService, useValue: confirmDialog },
+        { provide: MatSnackBar, useValue: snackBar },
         { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
       ],
     });
@@ -98,6 +103,7 @@ describe('ApplicationDetail', () => {
       riskLevel: 'LOW',
       comment: 'Documents verified.',
     });
+    expect(snackBar.open).toHaveBeenCalledWith('MA-2026-0001 approved', 'OK', expect.anything());
     expect(headings()).not.toContain('Record risk decision');
   });
 
@@ -114,12 +120,19 @@ describe('ApplicationDetail', () => {
 
     expect(confirmDialog.confirm).toHaveBeenCalledWith(expect.objectContaining({ tone: 'danger' }));
     expect(api.decide).not.toHaveBeenCalled();
+    expect(snackBar.open).not.toHaveBeenCalled();
   });
 
-  it('lets ADMIN assign a reviewer, never offering the creator', async () => {
+  it('lets ADMIN assign a reviewer, never offering the creator, and confirms it', async () => {
     await render(['assign', 'reveal-sensitive'], 'SUBMITTED' as never);
     api.assign.mockReturnValue(
-      of(createDetail({ status: 'IN_REVIEW', allowedActions: ['assign'] })),
+      of(
+        createDetail({
+          status: 'IN_REVIEW',
+          allowedActions: ['assign'],
+          assignedReviewer: { id: 'u-rev', displayName: 'Test Reviewer' },
+        }),
+      ),
     );
 
     expect(fixture.componentInstance['reviewers']().map((r) => r.id)).toEqual(['u-rev']);
@@ -128,6 +141,18 @@ describe('ApplicationDetail', () => {
     fixture.componentInstance['assignReviewer']();
 
     expect(api.assign).toHaveBeenCalledWith('app-0001', { reviewerId: 'u-rev' });
+    expect(snackBar.open).toHaveBeenCalledWith(
+      'MA-2026-0001 assigned to Test Reviewer',
+      'OK',
+      expect.anything(),
+    );
+  });
+
+  it('preselects the current reviewer when the application is already assigned', async () => {
+    await render(['assign'], undefined, { id: 'u-rev', displayName: 'Test Reviewer' });
+
+    expect(fixture.componentInstance['reviewerId'].value).toBe('u-rev');
+    expect(headings()).toContain('Reassign reviewer');
   });
 
   it('explains when the application cannot be opened', async () => {

@@ -15,6 +15,7 @@ nvm use
 npm ci
 cp .env.example .env                     # app config; git-ignored
 cp mock-api/.env.example mock-api/.env   # set SEED_USER_PASSWORD; git-ignored
+#the password set here will be used to login through dashboard.For all users the password is same just username is different. Check seed-users.ts
 npm run dev                              # mock API (:3000) + app (http://localhost:4200)
 ```
 
@@ -32,6 +33,43 @@ npm run dev                              # mock API (:3000) + app (http://localh
 | `npm run format`       | Prettier write                         |
 | `npm run format:check` | Prettier check                         |
 
+## Features
+
+| Brief                     | Where                                                                                                                  |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| A. Application dashboard  | Server-side pagination, sorting and filtering kept in the URL; skeleton, error/retry and empty states; status counts   |
+| B. Multi-step application | Five-step typed Reactive Form with custom validators (IBAN checksum, ownership ≤ 100 %, ticket ≤ volume)               |
+| C. Draft & auto-save      | Debounced RxJS auto-save, skips unchanged content, keeps the form on errors, warns before leaving with unsaved changes |
+| D. Detail & review        | Sectioned view with risk history and activity; approve/reject only for the assigned reviewer                           |
+| F. Sensitive information  | IBAN and tax IDs masked by default; audited, role-based reveal that re-masks after 30 s; CSP (below)                   |
+
+### Roles and permissions
+
+| Action                        | SALES      | REVIEWER | ADMIN |
+| ----------------------------- | ---------- | -------- | ----- |
+| View applications             | Own        | Assigned | All   |
+| Create, edit, submit          | Own drafts | –        | –     |
+| Approve / reject (risk level) | –          | Assigned | –     |
+| Assign reviewer               | –          | –        | ✓     |
+| Reveal sensitive values       | Own drafts | Assigned | ✓     |
+
+Users can hold several roles (permissions are the union), but nobody reviews an application they
+created. The UI hides what a user cannot do; the API enforces every rule again on each request.
+
+## Architecture notes
+
+- **Standalone components, signals and `inject()`** throughout; lazy feature routes with
+  `canMatch` guards, so code for forbidden areas is never downloaded.
+- **Session**: the access token lives only in memory. `authInterceptor` attaches it to `/api`
+  requests and, when several requests get `401` together, performs **one** shared
+  `POST /auth/refresh` and retries each request once.
+- **Permissions**: `PermissionService` and the `*appHasPermission` directive for role-based UI;
+  per-record rules come from the server's `allowedActions`.
+- **State**: small signal-based stores per page (`ApplicationListStore`, `ApplicationWizardStore`)
+  with RxJS for async flows (`switchMap` cancels stale list requests, `concatMap` orders saves).
+- **Tests**: Vitest + TestBed unit tests for services, guards, interceptor, stores, forms and
+  components (`npm run test:ci`).
+
 ## Environment configuration
 
 `npm start` / `npm run build` run `scripts/ng-with-env.mjs`, which reads `NG_APP_*` variables from
@@ -41,7 +79,7 @@ builder as compile-time `--define` constants. They are consumed only through
 command immediately.
 
 > Anything in a frontend environment file is compiled into the public JavaScript bundle. It can hold
-> configuration such as API URLs, never secrets.
+> configuration such as API URLs.
 
 ## Mock API
 
@@ -57,7 +95,7 @@ built against realistic security boundaries:
   carries `allowedActions` computed by `mock-api/src/applications/application.policy.ts`.
 - **Sensitive data** (IBAN, owner tax IDs) is always returned masked. Clear values are only
   available through an audited reveal endpoint and are write-only on save.
-- **No secrets in the repository**: demo users' password comes from `mock-api/.env` and is stored
+
   only as a salted scrypt hash. All seed data is fictional.
 - **Login rate limiting**: after `LOGIN_MAX_FAILURES` failed attempts a username is blocked for
   `LOGIN_LOCKOUT_SECONDS` (defaults: 5 attempts, 300 s).
@@ -66,6 +104,35 @@ built against realistic security boundaries:
 The Angular dev server proxies `/api` to the mock API (`proxy.conf.json`), so the browser only
 talks to its own origin and no CORS is needed. Node runs the TypeScript sources directly (native
 type stripping), and `contracts/` holds the API types shared by both sides.
+
+## Content Security Policy
+
+The policy is a `<meta http-equiv="Content-Security-Policy">` tag in `src/index.html`, so it
+applies wherever the app is served (dev server and production build alike):
+
+```
+default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;
+font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self';
+require-trusted-types-for 'script'; trusted-types angular angular#bundler
+```
+
+How it protects the app:
+
+- **Scripts only from our own origin** (`script-src 'self'`, no `'unsafe-inline'` or
+  `'unsafe-eval'`): even if an attacker managed to inject markup, an inline `<script>`, an
+  `onerror=` handler, `eval()` or a script from another domain would not run. This is the main
+  defence against XSS stealing the in-memory access token or revealed sensitive values.
+  Critical-CSS inlining is disabled in the production build because it relies on an inline
+  `onload` handler.
+- **Trusted Types** (`require-trusted-types-for 'script'`): DOM sinks such as `innerHTML` only
+  accept values created by Angular's sanitising policy, so raw HTML strings cannot be injected.
+  `angular#unsafe-bypass` is not allowed, so `bypassSecurityTrust*` cannot be used either.
+- **No data exfiltration**: `connect-src 'self'` limits network calls to our own `/api`;
+  `object-src 'none'`, `base-uri 'self'` and `form-action 'self'` close plugin, base-tag and
+  form-redirect tricks; fonts are self-hosted so no third-party origins are needed.
+- CSP is defence in depth: Angular already escapes template bindings, and the code never uses
+  `innerHTML` with untrusted data or `bypassSecurityTrust*`.
+
 
 ## Project structure
 
@@ -87,6 +154,7 @@ src/
    │  ├─ http/              HTTP interceptors and error handling
    │  └─ layout/            Application shell and navigation
    ├─ shared/               Reusable, feature-agnostic building blocks
+   │  ├─ guards/            Reusable route guards (unsaved changes)
    │  ├─ ui/                Presentational components
    │  ├─ validators/        Reusable form validators
    │  └─ utils/             Pure helper functions
@@ -95,6 +163,7 @@ src/
       ├─ errors/            Forbidden and not-found pages
       └─ applications/
          ├─ data-access/    API service, models, state
+         ├─ ui/             Status/risk badges, masked sensitive value
          ├─ list/           Dashboard
          ├─ wizard/         Multi-step merchant application
          └─ detail/         Application detail and review
