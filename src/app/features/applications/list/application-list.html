@@ -11,6 +11,29 @@
 </app-page-header>
 
 <section class="list" aria-label="Applications" [attr.aria-busy]="store.isLoading()">
+  @if (counts(); as count) {
+    <div class="counts" role="group" aria-label="Filter by status">
+      <button
+        type="button"
+        class="counts__item"
+        [attr.aria-pressed]="!store.query().status"
+        (click)="filterByStatus(undefined)"
+      >
+        All <strong>{{ totalCount() }}</strong>
+      </button>
+      @for (status of statuses; track status) {
+        <button
+          type="button"
+          class="counts__item"
+          [attr.aria-pressed]="store.query().status === status"
+          (click)="filterByStatus(status)"
+        >
+          {{ statusLabels[status] }} <strong>{{ count[status] }}</strong>
+        </button>
+      }
+    </div>
+  }
+
   <app-application-filters
     class="list__filters"
     [status]="store.query().status"

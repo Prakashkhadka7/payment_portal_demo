@@ -13,8 +13,14 @@ import { PermissionService } from '@core/auth/permission.service';
 import { PageHeader } from '@shared/ui/page-header/page-header';
 import { Skeleton } from '@shared/ui/skeleton/skeleton';
 import { StateMessage } from '@shared/ui/state-message/state-message';
-import { map } from 'rxjs';
-import { PAGE_SIZE_OPTIONS, SORT_FIELDS } from '../data-access/application.constants';
+import { catchError, map, of } from 'rxjs';
+import {
+  APPLICATION_STATUSES,
+  PAGE_SIZE_OPTIONS,
+  SORT_FIELDS,
+  STATUS_LABELS,
+} from '../data-access/application.constants';
+import { ApplicationsApi } from '../data-access/applications.api';
 import {
   parseListQuery,
   type ResolvedListQuery,
@@ -61,6 +67,18 @@ export class ApplicationList {
   private readonly permissions = inject(PermissionService);
 
   protected readonly pageSizeOptions = [...PAGE_SIZE_OPTIONS];
+  protected readonly statuses = APPLICATION_STATUSES;
+  protected readonly statusLabels = STATUS_LABELS;
+  // Summary per status; hidden if it cannot be loaded (the list still works).
+  protected readonly counts = toSignal(
+    inject(ApplicationsApi)
+      .counts()
+      .pipe(catchError(() => of(null))),
+    { initialValue: null },
+  );
+  protected readonly totalCount = computed(() =>
+    Object.values(this.counts() ?? {}).reduce((sum, count) => sum + count, 0),
+  );
   protected readonly isPhone = toSignal(
     inject(BreakpointObserver)
       .observe(PHONE_QUERY)

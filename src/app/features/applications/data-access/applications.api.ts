@@ -4,6 +4,7 @@ import type {
   ApplicationDataInput,
   ApplicationDetail,
   ApplicationListQuery,
+  ApplicationStatusCounts,
   ApplicationSummary,
   AssignReviewerRequest,
   CreateApplicationRequest,
@@ -26,6 +27,11 @@ export class ApplicationsApi {
 
   list(query: ApplicationListQuery): Observable<Page<ApplicationSummary>> {
     return this.http.get<Page<ApplicationSummary>>(this.baseUrl, { params: toHttpParams(query) });
+  }
+
+  /** Counts per status within the caller's scope (for the dashboard summary). */
+  counts(): Observable<ApplicationStatusCounts> {
+    return this.http.get<ApplicationStatusCounts>(`${this.baseUrl}/counts`);
   }
 
   get(id: string): Observable<ApplicationDetail> {

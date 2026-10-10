@@ -151,6 +151,8 @@ export interface ApplicationDetail {
   readonly allowedActions: readonly ApplicationAction[];
 }
 
+export type ApplicationStatusCounts = Readonly<Record<ApplicationStatus, number>>;
+
 export type ApplicationSortField = 'updatedAt' | 'legalName' | 'status';
 
 /** Query parameters of `GET /applications`. */

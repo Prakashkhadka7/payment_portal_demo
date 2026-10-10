@@ -37,3 +37,39 @@
     }
   }
 }
+
+.counts {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+
+  &__item {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 8px 14px;
+    border: 1px solid var(--app-line);
+    border-radius: 999px;
+    background: var(--app-paper-raised);
+    color: var(--mat-sys-on-surface-variant);
+    font: inherit;
+    white-space: nowrap;
+    cursor: pointer;
+
+    strong {
+      color: var(--app-ink);
+      font-variant-numeric: tabular-nums;
+    }
+
+    &[aria-pressed='true'] {
+      border-color: var(--mat-sys-primary);
+      background: var(--mat-sys-primary);
+      color: var(--mat-sys-on-primary);
+
+      strong {
+        color: inherit;
+      }
+    }
+  }
+}

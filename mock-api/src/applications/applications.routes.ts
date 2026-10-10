@@ -24,6 +24,10 @@ export function createApplicationsRouter(service: ApplicationsService): Router {
     res.status(201).json(service.create(currentUser(res), parseApplicationDataInput(body['data'])));
   });
 
+  router.get('/counts', (_req, res) => {
+    res.json(service.statusCounts(currentUser(res)));
+  });
+
   router.get('/:id', (req, res) => {
     res.json(service.get(currentUser(res), idParam(req)));
   });
