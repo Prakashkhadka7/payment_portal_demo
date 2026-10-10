@@ -13,6 +13,7 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { RouterLink } from '@angular/router';
 import type {
   ApiError,
@@ -81,6 +82,7 @@ export class ApplicationDetail implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly confirmDialog = inject(ConfirmDialogService);
   private readonly fb = inject(NonNullableFormBuilder);
+  private readonly snackBar = inject(MatSnackBar);
 
   protected readonly detail = signal<ApplicationDetailData | null>(null);
   protected readonly loadError = signal<ApiError | null>(null);
@@ -124,6 +126,7 @@ export class ApplicationDetail implements OnInit {
         next: (detail) => {
           this.detail.set(detail);
           if (this.can('assign')) {
+            this.reviewerId.setValue(detail.assignedReviewer?.id ?? '');
             this.loadReviewers(detail.createdBy.id);
           }
         },
@@ -153,7 +156,12 @@ export class ApplicationDetail implements OnInit {
       })
       .pipe(
         filter(Boolean),
-        switchMap(() => this.run(this.api.decide(this.id(), { decision, riskLevel, comment }))),
+        switchMap(() =>
+          this.run(
+            this.api.decide(this.id(), { decision, riskLevel, comment }),
+            (app) => `${app.reference} ${approve ? 'approved' : 'rejected'}`,
+          ),
+        ),
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe();
@@ -165,17 +173,27 @@ export class ApplicationDetail implements OnInit {
       this.reviewerId.markAsTouched();
       return;
     }
-    this.run(this.api.assign(this.id(), { reviewerId: this.reviewerId.value }))
+    this.run(
+      this.api.assign(this.id(), { reviewerId: this.reviewerId.value }),
+      (app) =>
+        `${app.reference} assigned to ${app.assignedReviewer?.displayName ?? 'the reviewer'}`,
+    )
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe();
   }
 
-  /** Runs an action and shows the updated application, or the server's error message. */
-  private run(request$: Observable<ApplicationDetailData>): Observable<ApplicationDetailData> {
+  /** Runs an action and shows the updated application plus a confirmation, or the server's error. */
+  private run(
+    request$: Observable<ApplicationDetailData>,
+    successMessage: (app: ApplicationDetailData) => string,
+  ): Observable<ApplicationDetailData> {
     this.busy.set(true);
     this.actionError.set(null);
     return request$.pipe(
-      tap((detail) => this.detail.set(detail)),
+      tap((detail) => {
+        this.detail.set(detail);
+        this.snackBar.open(successMessage(detail), 'OK', { duration: 5000 });
+      }),
       catchError((error: unknown) => {
         this.actionError.set(toApiError(error).message);
         return EMPTY;

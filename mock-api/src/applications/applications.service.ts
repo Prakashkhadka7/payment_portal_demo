@@ -5,6 +5,8 @@ import type {
   ApplicationDetail,
   ApplicationEvent,
   ApplicationListQuery,
+  ApplicationStatus,
+  ApplicationStatusCounts,
   ApplicationSummary,
   Page,
   RecordDecisionRequest,
@@ -71,6 +73,19 @@ export class ApplicationsService {
       page: query.page,
       pageSize: query.pageSize,
     };
+  }
+
+  /** Counts per status of the applications this user may see (same scope as the list). */
+  statusCounts(user: SessionUser): ApplicationStatusCounts {
+    const counts = Object.fromEntries(APPLICATION_STATUSES.map((status) => [status, 0])) as Record<
+      ApplicationStatus,
+      number
+    >;
+    this.applications
+      .all()
+      .filter((app) => canView(user, app))
+      .forEach((app) => (counts[app.status] += 1));
+    return counts;
   }
 
   get(user: SessionUser, id: string): ApplicationDetail {

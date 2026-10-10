@@ -15,11 +15,14 @@ import { ApplicationFilters } from './application-filters/application-filters';
 import { ApplicationList } from './application-list';
 
 describe('ApplicationList (dashboard page)', () => {
-  const api = { list: vi.fn() };
+  const api = { list: vi.fn(), counts: vi.fn() };
   let harness: RouterTestingHarness;
 
   const setUp = async (roles: readonly Role[] = ['SALES']): Promise<void> => {
     api.list.mockReset().mockReturnValue(of(createPage([createSummary()])));
+    api.counts
+      .mockReset()
+      .mockReturnValue(of({ DRAFT: 2, SUBMITTED: 3, IN_REVIEW: 1, APPROVED: 4, REJECTED: 0 }));
     TestBed.configureTestingModule({
       providers: [
         provideRouter([{ path: 'applications', component: ApplicationList }]),
@@ -126,6 +129,36 @@ describe('ApplicationList (dashboard page)', () => {
     await settle();
 
     expect(currentUrl()).toBe('/applications');
+  });
+
+  it('summarises counts by status and filters when one is clicked', async () => {
+    await setUp();
+    const element = await open();
+    const chips = [...element.querySelectorAll<HTMLButtonElement>('.counts__item')];
+
+    expect(chips.map((chip) => chip.textContent?.replace(/\s+/g, ' ').trim())).toEqual([
+      'All 10',
+      'Draft 2',
+      'Submitted 3',
+      'In review 1',
+      'Approved 4',
+      'Rejected 0',
+    ]);
+
+    chips[2].click();
+    await settle();
+
+    expect(currentUrl()).toBe('/applications?status=SUBMITTED');
+  });
+
+  it('still shows the list when the counts cannot be loaded', async () => {
+    await setUp();
+    api.counts.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+
+    const element = await open();
+
+    expect(element.querySelector('.counts')).toBeNull();
+    expect(element.querySelectorAll('tr.table__row')).toHaveLength(1);
   });
 
   describe('permission-aware UI', () => {

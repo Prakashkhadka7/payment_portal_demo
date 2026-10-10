@@ -76,6 +76,12 @@ describe('ApplicationsApi', () => {
     httpTesting.expectOne({ method: 'GET', url: '/api/users/reviewers' }).flush([]);
   });
 
+  it('loads the status counts', () => {
+    api.counts().subscribe();
+
+    httpTesting.expectOne({ method: 'GET', url: '/api/applications/counts' }).flush({});
+  });
+
   it('submits a draft', () => {
     api.submit('app-0001').subscribe();
 
