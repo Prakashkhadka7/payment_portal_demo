@@ -1,6 +1,6 @@
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { Component, computed, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatPaginatorModule, type PageEvent } from '@angular/material/paginator';
@@ -10,10 +10,11 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import type { Permission } from '@contracts';
 import { HasPermissionDirective } from '@core/auth/has-permission.directive';
 import { PermissionService } from '@core/auth/permission.service';
+import { RealtimeService } from '@core/realtime/realtime.service';
 import { PageHeader } from '@shared/ui/page-header/page-header';
 import { Skeleton } from '@shared/ui/skeleton/skeleton';
 import { StateMessage } from '@shared/ui/state-message/state-message';
-import { catchError, map, of } from 'rxjs';
+import { catchError, debounceTime, map, of, startWith, switchMap } from 'rxjs';
 import {
   APPLICATION_STATUSES,
   PAGE_SIZE_OPTIONS,
@@ -65,15 +66,21 @@ export class ApplicationList {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly permissions = inject(PermissionService);
+  private readonly api = inject(ApplicationsApi);
+  /** Live updates: a change made anywhere (by anyone) that this user may see. */
+  private readonly liveChange$ = inject(RealtimeService).applicationChanges$.pipe(
+    debounceTime(500),
+  );
 
   protected readonly pageSizeOptions = [...PAGE_SIZE_OPTIONS];
   protected readonly statuses = APPLICATION_STATUSES;
   protected readonly statusLabels = STATUS_LABELS;
-  // Summary per status; hidden if it cannot be loaded (the list still works).
+  // Summary per status, reloaded on live changes;
   protected readonly counts = toSignal(
-    inject(ApplicationsApi)
-      .counts()
-      .pipe(catchError(() => of(null))),
+    this.liveChange$.pipe(
+      startWith(null),
+      switchMap(() => this.api.counts().pipe(catchError(() => of(null)))),
+    ),
     { initialValue: null },
   );
   protected readonly totalCount = computed(() =>
@@ -85,9 +92,11 @@ export class ApplicationList {
       .pipe(map((state) => state.matches)),
     { initialValue: false },
   );
+
   protected readonly columns = computed(() =>
     visibleColumns((permission) => this.permissions.has(permission)),
   );
+  
   protected readonly skeletonRows = computed(() =>
     Math.min(this.store.query().pageSize, MAX_SKELETON_ROWS),
   );
@@ -135,6 +144,8 @@ export class ApplicationList {
 
   constructor() {
     this.store.connect(this.route.queryParams.pipe(map(parseListQuery)));
+    // Reload the current page when something changes elsewhere.
+    this.liveChange$.pipe(takeUntilDestroyed()).subscribe(() => this.store.retry());
   }
 
   protected search(search: string): void {

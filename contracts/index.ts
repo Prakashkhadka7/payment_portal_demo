@@ -2,3 +2,4 @@
 export type * from './application';
 export type * from './auth';
 export type * from './common';
+export type * from './realtime';

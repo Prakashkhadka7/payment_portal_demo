@@ -6,6 +6,7 @@ import { provideRouter, Router } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import type { Role } from '@contracts';
 import { AuthStore } from '@core/auth/auth.store';
+import { RealtimeService } from '@core/realtime/realtime.service';
 import { NEVER, of, throwError } from 'rxjs';
 import { createPage, createSummary } from '../../../../testing/application-fixtures';
 import { createSession } from '../../../../testing/auth-fixtures';
@@ -27,6 +28,7 @@ describe('ApplicationList (dashboard page)', () => {
       providers: [
         provideRouter([{ path: 'applications', component: ApplicationList }]),
         { provide: ApplicationsApi, useValue: api },
+        { provide: RealtimeService, useValue: { applicationChanges$: NEVER } },
         { provide: MATERIAL_ANIMATIONS, useValue: { animationsDisabled: true } },
       ],
     });
