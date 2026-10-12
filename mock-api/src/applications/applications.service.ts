@@ -21,6 +21,7 @@ import {
   validationFailed,
 } from '../shared/http-error.ts';
 import { normalizeIban } from '../shared/iban.ts';
+import type { ApplicationChanges } from '../realtime/realtime-server.ts';
 import type { SessionUser, UserRepository } from '../users/user.repository.ts';
 import { APPLICATION_STATUSES } from './application.enums.ts';
 import { toDetail, toSummary } from './application.mapper.ts';
@@ -38,6 +39,7 @@ type NewEvent = DistributiveOmit<ApplicationEvent, 'id' | 'at' | 'actor'>;
 export interface ApplicationsServiceDeps {
   readonly applications: ApplicationRepository;
   readonly users: UserRepository;
+  readonly changes?: ApplicationChanges;
   readonly now?: () => Date;
 }
 
@@ -45,11 +47,13 @@ export interface ApplicationsServiceDeps {
 export class ApplicationsService {
   private readonly applications: ApplicationRepository;
   private readonly users: UserRepository;
+  private readonly changes: ApplicationChanges | undefined;
   private readonly now: () => Date;
 
-  constructor({ applications, users, now }: ApplicationsServiceDeps) {
+  constructor({ applications, users, changes, now }: ApplicationsServiceDeps) {
     this.applications = applications;
     this.users = users;
+    this.changes = changes;
     this.now = now ?? (() => new Date());
   }
 
@@ -107,6 +111,7 @@ export class ApplicationsService {
       data: mergeData(null, input),
       history: [this.event(user, { type: 'CREATED' })],
     };
+    this.changes?.emit('change', record);
     return toDetail(this.applications.save(record), user, this.users);
   }
 
@@ -216,6 +221,7 @@ export class ApplicationsService {
     changes: Partial<ApplicationRecord>,
   ): ApplicationDetail {
     const saved = this.applications.save({ ...app, ...changes, version: app.version + 1 });
+    this.changes?.emit('change', saved);
     return toDetail(saved, user, this.users);
   }
 

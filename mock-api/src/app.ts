@@ -6,6 +6,7 @@ import { createApplicationsRouter } from './applications/applications.routes.ts'
 import type { ApplicationRepository } from './applications/application.repository.ts';
 import { requireAuth } from './auth/auth.middleware.ts';
 import { createAuthRouter } from './auth/auth.routes.ts';
+import type { ApplicationChanges } from './realtime/realtime-server.ts';
 import type { LoginRateLimiter } from './auth/login-rate-limiter.ts';
 import type { TokenStore } from './auth/token-store.ts';
 import type { MockApiConfig } from './config.ts';
@@ -21,6 +22,7 @@ export interface AppDependencies {
   >;
   readonly users: UserRepository;
   readonly applications: ApplicationRepository;
+  readonly changes?: ApplicationChanges;
   readonly tokens: TokenStore;
   readonly rateLimiter: LoginRateLimiter;
   readonly now?: () => Date;
@@ -31,7 +33,7 @@ export interface AppDependencies {
  * No CORS middleware on purpose: the browser reaches the API through the same-origin dev proxy.
  */
 export function createApp(deps: AppDependencies): Express {
-  const { config, users, applications, tokens, rateLimiter, now } = deps;
+  const { config, users, applications, changes, tokens, rateLimiter, now } = deps;
   const app = express();
 
   app.use(helmet());
@@ -50,7 +52,7 @@ export function createApp(deps: AppDependencies): Express {
   app.use(
     '/api/applications',
     ...authenticated,
-    createApplicationsRouter(new ApplicationsService({ applications, users, now })),
+    createApplicationsRouter(new ApplicationsService({ applications, users, changes, now })),
   );
 
   app.use('/api', notFoundHandler);
